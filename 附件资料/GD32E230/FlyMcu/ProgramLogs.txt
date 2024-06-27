@@ -1,0 +1,19 @@
+[2024-02-23 22:06:Program Success:726434363937020036383830 D:\GD32系列\智能手表\02_usart0_tx_test\Objects\usart0_tx_flash.hex
+[2024-03-04 21:50:Program Success:726434363937020036383830 D:\GD32系列\智能手表\02_usart0_rx_test\Objects\usart0_rx_flash.hex
+[2024-03-04 21:52:Program Success:726434363937020036383830 D:\GD32系列\智能手表\02_usart0_rx_test\Objects\usart0_rx_flash.hex
+[2024-03-04 21:54:Program Success:726434363937020036383830 D:\GD32系列\智能手表\02_usart0_rx_test\Objects\usart0_rx_flash.hex
+[2024-03-04 21:56:Program Success:726434363937020036383830 D:\GD32系列\智能手表\02_usart0_rx_test\Objects\usart0_rx_flash.hex
+[2024-03-04 21:57:Program Success:726434363937020036383830 D:\GD32系列\智能手表\02_usart0_rx_test\Objects\usart0_rx_flash.hex
+[2024-03-04 21:58:Program Success:726434363937020036383830 D:\GD32系列\智能手表\02_usart0_rx_test\Objects\usart0_rx_flash.hex
+[2024-03-04 21:58:Program Success:726434363937020036383830 D:\GD32系列\智能手表\02_usart0_rx_test\Objects\usart0_rx_flash.hex
+[2024-03-04 23:25:Program Success:726434363937020036383830 D:\GD32系列\智能手表\04_key_test\Objects\key_test.hex
+[2024-03-04 23:25:Program Success:726434363937020036383830 D:\GD32系列\智能手表\04_key_test\Objects\key_test.hex
+[2024-03-05 22:28:Program Success:726434363937020036383830 D:\GD32系列\智能手表\05_lcdinit_test\Objects\lcd_init_test.hex
+[2024-03-05 22:30:Program Success:726434363937020036383830 C:\Users\chenlong\Documents\Tencent Files\3375174314\FileRecv\各视频对应的程序-嘉立创手表\05_lcd_init_test\Objects\key_test.hex
+[2024-03-05 22:31:Program Success:726434363937020036383830 D:\GD32系列\智能手表\05_lcdinit_test\Objects\lcd_init_test.hex
+[2024-03-05 22:38:Program Success:726434363937020036383830 C:\Users\chenlong\Documents\Tencent Files\3375174314\FileRecv\各视频对应的程序-嘉立创手表\05_lcd_init_test\Objects\key_test.hex
+[2024-03-05 22:40:Program Success:726434363937020036383830 D:\GD32系列\智能手表\05_lcdinit_test\Objects\lcd_init_test.hex
+[2024-03-05 22:40:Program Success:726434363937020036383830 D:\GD32系列\智能手表\05_lcdinit_test\Objects\lcd_init_test.hex
+[2024-03-05 22:41:Program Success:726434363937020036383830 D:\GD32系列\智能手表\05_lcdinit_test\Objects\lcd_init_test.hex
+[2024-04-10 15:52:Program Success:726434363937020036383830 D:\智能手表-欧启标\各视频对应的程序-嘉立创手表\18_8_alarm_test\Objects\18_1_alarm_task_test.hex
+[2024-04-10 15:55:Program Success:726434363937020036383830 D:\智能手表-欧启标\各视频对应的程序-嘉立创手表\18_8_alarm_test\Objects\18_1_alarm_task_test.hex
