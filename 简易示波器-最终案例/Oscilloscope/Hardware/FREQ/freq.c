@@ -31,7 +31,7 @@ void Init_FreqTimer(void)
     //定时器参数初始化
     timer_struct_para_init(&timer_initpara);
     
-    timer_initpara.prescaler         = 719;                  //预分频器参数
+    timer_initpara.prescaler         = 71;                  //预分频器参数
     timer_initpara.alignedmode       = TIMER_COUNTER_EDGE;  //边沿对齐
     timer_initpara.counterdirection  = TIMER_COUNTER_UP;    //向上计数
     timer_initpara.period            = 65535;               //周期
@@ -60,11 +60,46 @@ void Init_FreqTimer(void)
     timer_enable(TIMER2);
 }
 
-uint16_t readvalue1 = 0, readvalue2 = 0;
-__IO uint16_t ccnumber = 0;
-__IO uint32_t count = 0;
-__IO float freq=0;
+static __IO uint16_t ccnumber = 0;
+static __IO uint32_t freq = 0;
+static __IO uint16_t readvalue1 = 0, readvalue2 = 0;
+static __IO uint32_t count = 0;
+
 extern volatile struct Oscilloscope oscilloscope;
+
+void Freq_calibration(__IO uint32_t *freq)
+{
+	if(((*freq) >= 950) && ((*freq) < 1050)){
+		(*freq) = 1000;
+	}
+	else if(((*freq) >= 1050) && ((*freq) < 2050)){
+		(*freq) = 2000;
+	}
+	else if(((*freq) >= 2050) && ((*freq) < 3050)){
+		(*freq) = 3000;
+	}
+	else if(((*freq) >= 3050) && ((*freq) < 4050)){
+		(*freq) = 4000;
+	}
+	else if(((*freq) >= 4050) && ((*freq) < 5050)){
+		(*freq) = 5000;
+	}
+	else if(((*freq) >= 5050) && ((*freq) < 6050)){
+		(*freq) = 6000;
+	}
+	else if(((*freq) >= 6050) && ((*freq) < 7050)){
+		(*freq) = 7000;
+	}
+	else if(((*freq) >= 7050) && ((*freq) < 8050)){
+		(*freq) = 8000;
+	}
+	else if(((*freq) >= 8050) && ((*freq) < 9050)){
+		(*freq) = 9000;
+	}
+	else if(((*freq) >= 9050) && ((*freq) < 10050)){
+		(*freq) = 10000;
+	}
+}
 
 void TIMER2_IRQHandler(void)
 {
@@ -86,17 +121,13 @@ void TIMER2_IRQHandler(void)
             }
             
             //计算频率
-            freq = (float)100000U / count;     
-            
-            if(freq >= 100)
-            {
-               oscilloscope.gatherFreq = freq; 
-            }
-                
-            readvalue1=0;
+            freq = 1000000U / count;     
+            Freq_calibration(&freq);
+            oscilloscope.gatherFreq = freq; 
+         
+            readvalue1=0;readvalue2=0;
             count=0;
             freq=0;
-            readvalue2=0;
             ccnumber = 0;
         }
         timer_interrupt_flag_clear(TIMER2, TIMER_INT_FLAG_CH0);

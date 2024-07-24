@@ -78,6 +78,7 @@ int main(void)
     while(1)
     {  
         //按键扫描处理函数
+				Key_Sacnf(&oscilloscope);
         Key_Handle(&oscilloscope);
         
         //如果获取电压值完成，开始刷屏
@@ -138,12 +139,14 @@ int main(void)
             //依次显示后续100个数据，这样可以防止波形滚动
             for(i=Trigger_number;i<Trigger_number+100;i++)
             {
-                if(oscilloscope.keyValue == KEYD)
+								KEYD_SCAN(&oscilloscope);
+                if(oscilloscope.keyValue == KEYDPRESS)
                 {
                     oscilloscope.keyValue=0;
                     do
                     {
-                        if(oscilloscope.keyValue == KEYD){
+												KEYD_SCAN(&oscilloscope);
+                        if(oscilloscope.keyValue == KEYDPRESS){
                             oscilloscope.keyValue=0;
                             break;
                         }

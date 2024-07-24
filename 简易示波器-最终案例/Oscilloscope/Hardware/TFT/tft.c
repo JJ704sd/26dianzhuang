@@ -170,15 +170,20 @@ void drawCurve(uint8_t yOffset,short int rawValue)
 		if(x<100)  //不超过屏幕宽度
 		{
 			TFT_DrawLine(lastX,lastY,x,y,GREEN);
+			TFT_Address_Set16(x+1,30,x+1,80);
 			for(i=30;i<=80;i++)
 			{
-					TFT_DrawPoint(x+1,i,BLACK);//画点
-			}
+					TFT_WR_DATA16(BLACK);
+			}	
 			lastX=x;
 			lastY=y;
 		}
 		else  //超出屏幕宽度，清屏，从第一个点开始绘制，实现动态更新效果
-		{         
+		{        
+			for(i=30;i<=80;i++)
+			{
+					TFT_DrawPoint(1,i,BLACK);
+			}			
 			TFT_DrawPoint(0,y,GREEN);   
 			lastX=0;
 			lastY=y;
@@ -491,14 +496,9 @@ void TFT_ShowChinese24x24(uint16_t x,uint16_t y,uint8_t *s,uint16_t fc,uint16_t 
 	}
 } 
 
-/*
-*   函数内容：静止UI界面
-*   函数参数：无
-*   返回值：  无
-*/
 void TFT_StaticUI(void)
 {
-    uint16_t i=0,j=0;
+    uint16_t i=0;
     
     char showData[32]={0};
     
@@ -520,7 +520,7 @@ void TFT_StaticUI(void)
     TFT_ShowString(110,72,(uint8_t *)showData,BLACK,YELLOW,16,0);  
     memset(showData,0,32);
     
-    sprintf(showData,"        ");
+    sprintf(showData,"      ");
     TFT_ShowString(110,92,(uint8_t *)showData,WHITE,PURPLE,12,0);  
     memset(showData,0,32);
     TFT_ShowChinese(118,92,(uint8_t *)"占空比",WHITE,PURPLE,12,0);
@@ -557,59 +557,56 @@ void TFT_StaticUI(void)
         TFT_DrawPoint((i*10)+3,83,GREEN);
     }
 }
+
 /*
-*   函数内容：  显示字符串
-*   函数参数：  uint16_t vpp--峰峰值
-*               uint16_t freq-频率
-*               float DoBias--直流偏执信号
+*   函数内容：  显示UI效果
+*   函数参数：  无
 *   返回值：    无
 */
 void TFT_ShowUI(volatile const struct Oscilloscope *value)
-{
-    char showData[32]={0};
-    
-    sprintf(showData,"%1.2fV ",(*value).vpp);
-    TFT_ShowString(5,106,(uint8_t *)showData,BLACK,GREEN,16,0);  
-    memset(showData,0,32);
-    
-    if((*value).gatherFreq>=1000)
-    {
-        sprintf(showData,"%2.0fKHz",(*value).gatherFreq/1000.0f);
-        TFT_ShowString(55,106,(uint8_t *)showData,BLACK,GREEN,16,0);  
-        memset(showData,0,32);
-    }
-    else
-    {
-        sprintf(showData,"%3.0fHz ",(*value).gatherFreq);
-        TFT_ShowString(55,106,(uint8_t *)showData,BLACK,GREEN,16,0);  
-        memset(showData,0,32);  
-    }
-
-    if((*value).ouptputbit == 1)
-    {   
-        TFT_ShowChinese(118,36,(uint8_t *)"打开",BLACK,YELLOW,16,0);
-    }
-    else
-    {
-        TFT_ShowChinese(118,36,(uint8_t *)"关闭",BLACK,YELLOW,16,0);     
-    }
-    
-    if((*value).outputFreq>=1000)
-    {
-        sprintf(showData,"%3dKHz",(*value).outputFreq/1000);
-        TFT_ShowString(110,72,(uint8_t *)showData,BLACK,YELLOW,16,0);  
-        memset(showData,0,32); 
-    }
-    else
-    {
-        sprintf(showData," %3dHz",(*value).outputFreq);
-        TFT_ShowString(110,72,(uint8_t *)showData,BLACK,YELLOW,16,0);  
-        memset(showData,0,32);
-    }  
-
-    sprintf(showData,"%3.1f%%  ",(((*value).pwmOut)/((*value).timerPeriod+0.0f))*100);
-    TFT_ShowString(110,106,(uint8_t *)showData,BLACK,YELLOW,16,0);  
-    memset(showData,0,32);        
+{	
+	char showData[32]={0};
+	sprintf(showData,"%1.2fV ",(*value).vpp);
+	TFT_ShowString(5,106,(uint8_t *)showData,BLACK,GREEN,16,0);
+	memset(showData,0,32);
+	
+	if((*value).gatherFreq>=1000)
+	{
+			sprintf(showData,"%3dKHz",(*value).gatherFreq/1000);
+			TFT_ShowString(55,106,(uint8_t *)showData,BLACK,GREEN,16,0);  
+			memset(showData,0,32);
+	}
+	else
+	{
+			sprintf(showData,"%3dHz ",(*value).gatherFreq);
+			TFT_ShowString(55,106,(uint8_t *)showData,BLACK,GREEN,16,0);  
+			memset(showData,0,32);  
+	}
+	
+	if((*value).ouptputbit == 1)
+	{   
+			TFT_ShowChinese(118,36,(uint8_t *)"打开",BLACK,YELLOW,16,0);
+	}
+	else
+	{
+			TFT_ShowChinese(118,36,(uint8_t *)"关闭",BLACK,YELLOW,16,0);     
+	}
+	
+	if((*value).outputFreq>=1000)
+	{
+			sprintf(showData,"%3dKHz",(*value).outputFreq/1000);
+			TFT_ShowString(110,72,(uint8_t *)showData,BLACK,YELLOW,16,0); 	
+			memset(showData,0,32); 
+	}
+	else
+	{
+			sprintf(showData," %3dHz",(*value).outputFreq);
+			TFT_ShowString(110,72,(uint8_t *)showData,BLACK,YELLOW,16,0);  
+			memset(showData,0,32);
+	} 
+	sprintf(showData,"  %2d%%",(uint16_t)((((*value).pwmOut)/((*value).timerPeriod+0.0f))*100));
+	TFT_ShowString(110,106,(uint8_t *)showData,BLACK,YELLOW,16,0);  
+	memset(showData,0,32); 
 }
 
 
