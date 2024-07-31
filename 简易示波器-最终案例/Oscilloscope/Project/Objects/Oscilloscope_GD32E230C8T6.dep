@@ -30,7 +30,7 @@ I (..\Firmware\GD32E23x_standard_peripheral\Include\gd32e23x_wwdgt.h)(0x63FC50AE
 I (..\Firmware\GD32E23x_standard_peripheral\Include\gd32e23x_misc.h)(0x63FC50AE)
 I (..\Firmware\GD32E23x_standard_peripheral\Include\gd32e23x_cmp.h)(0x63FC50AE)
 I (..\User\systick.h)(0x65916C43)
-F (..\User\main.c)(0x66A06E91)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m23 -c-fno-rtti -funsigned-char -fshort-enums -fshort-wchar-D__MICROLIB -gdwarf-4 -O0 -ffunction-sections -Wno-packed -Wno-missing-variable-declarations -Wno-missing-prototypes -Wno-missing-noreturn -Wno-sign-conversion -Wno-nonportable-include-path -Wno-reserved-id-macro -Wno-unused-macros -Wno-documentation-unknown-command -Wno-documentation -Wno-license-management -Wno-parentheses-equality -Wno-reserved-identifier -I ../User -I ../Firmware/CMSIS -I ../Firmware/CMSIS/GD/GD32E23x/Include -I ../Firmware/GD32E23x_standard_peripheral/Include -I ../Hardware/LED -I ../Hardware/TFT -I ../Hardware/ADC -I ../Hardware/USART -I ../Hardware/TIMER -I ../Hardware/KEY -I ../Hardware/FREQ -Wno-invalid-source-encoding-I./RTE/_GD32E230C8T6-ID:/Keil_Arm/Pack/ARM/CMSIS/5.9.0/CMSIS/Core/Include-ID:/Keil_Arm/Pack/GigaDevice/GD32E23x_DFP/1.1.0/Device/Include-D__UVISION_VERSION="538" -D_RTE_ -DGD32E23x -D_RTE_ -DGD32E230-o ./objects/main.o -MD)
+F (..\User\main.c)(0x66AA3736)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m23 -c-fno-rtti -funsigned-char -fshort-enums -fshort-wchar-D__MICROLIB -gdwarf-4 -O0 -ffunction-sections -Wno-packed -Wno-missing-variable-declarations -Wno-missing-prototypes -Wno-missing-noreturn -Wno-sign-conversion -Wno-nonportable-include-path -Wno-reserved-id-macro -Wno-unused-macros -Wno-documentation-unknown-command -Wno-documentation -Wno-license-management -Wno-parentheses-equality -Wno-reserved-identifier -I ../User -I ../Firmware/CMSIS -I ../Firmware/CMSIS/GD/GD32E23x/Include -I ../Firmware/GD32E23x_standard_peripheral/Include -I ../Hardware/LED -I ../Hardware/TFT -I ../Hardware/ADC -I ../Hardware/USART -I ../Hardware/TIMER -I ../Hardware/KEY -I ../Hardware/FREQ -Wno-invalid-source-encoding-I./RTE/_GD32E230C8T6-ID:/Keil_Arm/Pack/ARM/CMSIS/5.9.0/CMSIS/Core/Include-ID:/Keil_Arm/Pack/GigaDevice/GD32E23x_DFP/1.1.0/Device/Include-D__UVISION_VERSION="538" -D_RTE_ -DGD32E23x -D_RTE_ -DGD32E230-o ./objects/main.o -MD)
 I (..\Firmware\CMSIS\GD\GD32E23x\Include\gd32e23x.h)(0x63FC50AE)
 I (D:\Keil_Arm\Pack\ARM\CMSIS\5.9.0\CMSIS\Core\Include\core_cm23.h)(0x626F4ADE)
 I (D:\Keil_Arm\ARM\ARMCLANG\include\stdint.h)(0x63884908)
@@ -63,7 +63,7 @@ I (D:\Keil_Arm\ARM\ARMCLANG\include\string.h)(0x63884908)
 I (D:\Keil_Arm\ARM\ARMCLANG\include\stdio.h)(0x63884908)
 I (..\Hardware\LED\led.h)(0x65926743)
 I (..\Hardware\TFT\tft.h)(0x659CEB87)
-I (..\User\main.h)(0x66A06A2B)
+I (..\User\main.h)(0x66AA3520)
 I (..\Hardware\TFT\tft_init.h)(0x65B6122B)
 I (..\Hardware\ADC\adc.h)(0x6597774A)
 I (..\Hardware\USART\usart.h)(0x6592B3C5)
@@ -754,7 +754,7 @@ I (..\Firmware\GD32E23x_standard_peripheral\Include\gd32e23x_misc.h)(0x63FC50AE)
 I (..\Firmware\GD32E23x_standard_peripheral\Include\gd32e23x_cmp.h)(0x63FC50AE)
 I (..\User\systick.h)(0x65916C43)
 I (D:\Keil_Arm\ARM\ARMCLANG\include\stdio.h)(0x63884908)
-I (..\User\main.h)(0x66A06A2B)
+I (..\User\main.h)(0x66AA3520)
 I (..\Hardware\TFT\tft_init.h)(0x65B6122B)
 I (D:\Keil_Arm\ARM\ARMCLANG\include\string.h)(0x63884908)
 I (..\Hardware\TFT\font.h)(0x659CFCA0)
@@ -789,7 +789,7 @@ I (..\Firmware\GD32E23x_standard_peripheral\Include\gd32e23x_misc.h)(0x63FC50AE)
 I (..\Firmware\GD32E23x_standard_peripheral\Include\gd32e23x_cmp.h)(0x63FC50AE)
 I (..\User\systick.h)(0x65916C43)
 I (D:\Keil_Arm\ARM\ARMCLANG\include\stdio.h)(0x63884908)
-I (..\User\main.h)(0x66A06A2B)
+I (..\User\main.h)(0x66AA3520)
 F (..\Hardware\USART\usart.c)(0x6592B3C5)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m23 -c-fno-rtti -funsigned-char -fshort-enums -fshort-wchar-D__MICROLIB -gdwarf-4 -O0 -ffunction-sections -Wno-packed -Wno-missing-variable-declarations -Wno-missing-prototypes -Wno-missing-noreturn -Wno-sign-conversion -Wno-nonportable-include-path -Wno-reserved-id-macro -Wno-unused-macros -Wno-documentation-unknown-command -Wno-documentation -Wno-license-management -Wno-parentheses-equality -Wno-reserved-identifier -I ../User -I ../Firmware/CMSIS -I ../Firmware/CMSIS/GD/GD32E23x/Include -I ../Firmware/GD32E23x_standard_peripheral/Include -I ../Hardware/LED -I ../Hardware/TFT -I ../Hardware/ADC -I ../Hardware/USART -I ../Hardware/TIMER -I ../Hardware/KEY -I ../Hardware/FREQ -Wno-invalid-source-encoding-I./RTE/_GD32E230C8T6-ID:/Keil_Arm/Pack/ARM/CMSIS/5.9.0/CMSIS/Core/Include-ID:/Keil_Arm/Pack/GigaDevice/GD32E23x_DFP/1.1.0/Device/Include-D__UVISION_VERSION="538" -D_RTE_ -DGD32E23x -D_RTE_ -DGD32E230-o ./objects/usart.o -MD)
 I (..\Hardware\USART\usart.h)(0x6592B3C5)
 I (..\Firmware\CMSIS\GD\GD32E23x\Include\gd32e23x.h)(0x63FC50AE)
@@ -853,7 +853,7 @@ I (..\Firmware\GD32E23x_standard_peripheral\Include\gd32e23x_cmp.h)(0x63FC50AE)
 I (..\User\systick.h)(0x65916C43)
 I (D:\Keil_Arm\ARM\ARMCLANG\include\stdio.h)(0x63884908)
 I (..\Hardware\ADC\adc.h)(0x6597774A)
-I (..\User\main.h)(0x66A06A2B)
+I (..\User\main.h)(0x66AA3520)
 F (..\Hardware\KEY\key.c)(0x66A06DEA)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m23 -c-fno-rtti -funsigned-char -fshort-enums -fshort-wchar-D__MICROLIB -gdwarf-4 -O0 -ffunction-sections -Wno-packed -Wno-missing-variable-declarations -Wno-missing-prototypes -Wno-missing-noreturn -Wno-sign-conversion -Wno-nonportable-include-path -Wno-reserved-id-macro -Wno-unused-macros -Wno-documentation-unknown-command -Wno-documentation -Wno-license-management -Wno-parentheses-equality -Wno-reserved-identifier -I ../User -I ../Firmware/CMSIS -I ../Firmware/CMSIS/GD/GD32E23x/Include -I ../Firmware/GD32E23x_standard_peripheral/Include -I ../Hardware/LED -I ../Hardware/TFT -I ../Hardware/ADC -I ../Hardware/USART -I ../Hardware/TIMER -I ../Hardware/KEY -I ../Hardware/FREQ -Wno-invalid-source-encoding-I./RTE/_GD32E230C8T6-ID:/Keil_Arm/Pack/ARM/CMSIS/5.9.0/CMSIS/Core/Include-ID:/Keil_Arm/Pack/GigaDevice/GD32E23x_DFP/1.1.0/Device/Include-D__UVISION_VERSION="538" -D_RTE_ -DGD32E23x -D_RTE_ -DGD32E230-o ./objects/key.o -MD)
 I (..\Hardware\KEY\key.h)(0x66A06E00)
 I (..\Firmware\CMSIS\GD\GD32E23x\Include\gd32e23x.h)(0x63FC50AE)
@@ -885,7 +885,7 @@ I (..\Firmware\GD32E23x_standard_peripheral\Include\gd32e23x_misc.h)(0x63FC50AE)
 I (..\Firmware\GD32E23x_standard_peripheral\Include\gd32e23x_cmp.h)(0x63FC50AE)
 I (..\User\systick.h)(0x65916C43)
 I (D:\Keil_Arm\ARM\ARMCLANG\include\stdio.h)(0x63884908)
-I (..\User\main.h)(0x66A06A2B)
+I (..\User\main.h)(0x66AA3520)
 I (..\Hardware\TIMER\timer.h)(0x65AFAB0B)
 I (..\Hardware\TFT\tft.h)(0x659CEB87)
 F (..\Hardware\FREQ\freq.c)(0x66A07111)(-xc -std=c99 --target=arm-arm-none-eabi -mcpu=cortex-m23 -c-fno-rtti -funsigned-char -fshort-enums -fshort-wchar-D__MICROLIB -gdwarf-4 -O0 -ffunction-sections -Wno-packed -Wno-missing-variable-declarations -Wno-missing-prototypes -Wno-missing-noreturn -Wno-sign-conversion -Wno-nonportable-include-path -Wno-reserved-id-macro -Wno-unused-macros -Wno-documentation-unknown-command -Wno-documentation -Wno-license-management -Wno-parentheses-equality -Wno-reserved-identifier -I ../User -I ../Firmware/CMSIS -I ../Firmware/CMSIS/GD/GD32E23x/Include -I ../Firmware/GD32E23x_standard_peripheral/Include -I ../Hardware/LED -I ../Hardware/TFT -I ../Hardware/ADC -I ../Hardware/USART -I ../Hardware/TIMER -I ../Hardware/KEY -I ../Hardware/FREQ -Wno-invalid-source-encoding-I./RTE/_GD32E230C8T6-ID:/Keil_Arm/Pack/ARM/CMSIS/5.9.0/CMSIS/Core/Include-ID:/Keil_Arm/Pack/GigaDevice/GD32E23x_DFP/1.1.0/Device/Include-D__UVISION_VERSION="538" -D_RTE_ -DGD32E23x -D_RTE_ -DGD32E230-o ./objects/freq.o -MD)
@@ -919,4 +919,4 @@ I (..\Firmware\GD32E23x_standard_peripheral\Include\gd32e23x_misc.h)(0x63FC50AE)
 I (..\Firmware\GD32E23x_standard_peripheral\Include\gd32e23x_cmp.h)(0x63FC50AE)
 I (..\User\systick.h)(0x65916C43)
 I (D:\Keil_Arm\ARM\ARMCLANG\include\stdio.h)(0x63884908)
-I (..\User\main.h)(0x66A06A2B)
+I (..\User\main.h)(0x66AA3520)

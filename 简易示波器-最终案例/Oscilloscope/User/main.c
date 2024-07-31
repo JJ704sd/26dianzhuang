@@ -23,7 +23,10 @@ int main(void)
     //中间值
     float median=0;
     
-    //峰峰值
+		//最小值
+		float min = 9999;
+	
+    //显示值
     float voltage=0;
     
     //触发电压值
@@ -86,7 +89,7 @@ int main(void)
         {           
             oscilloscope.showbit=0;
             oscilloscope.vpp=0;
-            
+            min = 9999;
             //转换电压值
             for(i=0;i<300;i++)
             {
@@ -98,6 +101,10 @@ int main(void)
                 {
                     oscilloscope.vpp = oscilloscope.voltageValue[i];
                 }
+								if(min > oscilloscope.voltageValue[i])
+								{
+									min = oscilloscope.voltageValue[i];
+								}
                 if(oscilloscope.vpp <= 0.3)
                 {
                     oscilloscope.gatherFreq=0;
@@ -128,8 +135,13 @@ int main(void)
             //如果幅值过小，会出现放大倍数过大导致波形显示异常的问题
             if(oscilloscope.vpp > 0.3)
             {
-								//获取中间值
-								median = oscilloscope.vpp / 2.0f;
+								//获取中间值,如果有负压，则需要先抬升为正压
+								if(min < -0.3){
+									median = oscilloscope.vpp;
+								}
+								else{
+									median = oscilloscope.vpp / 2.0f;
+								}
 							
                 //放大倍数，需要确定放大之后的区间，我将波形固定显示在（18.75~41.25中），(41.25-18.75)/2=11.25f
                 gainFactor = 11.25f/median;
@@ -152,8 +164,12 @@ int main(void)
                         }
                     }while(1);
                 }
-                voltage=oscilloscope.voltageValue[i];
-
+								if(min < -0.3){
+									voltage = oscilloscope.voltageValue[i] + oscilloscope.vpp;
+								}
+								else{
+									voltage = oscilloscope.voltageValue[i];
+								}
                 if(voltage >= median)
                 {
                     voltage = 30 - (voltage - median)*gainFactor;
