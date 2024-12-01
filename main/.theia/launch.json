@@ -1,0 +1,37 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "TI-simple-oscilloscope",
+            "type": "ccs-debug",
+            "request": "launch",
+            "projectInfo": {
+                "name": "TI-simple-oscilloscope",
+                "resourceId": "/TI-simple-oscilloscope"
+            },
+            "debuggerSettings": {
+                "targetConfigs/MSPM0G3507.ccxml": {
+                    "Texas Instruments XDS110 USB Debug Probe/CORTEX_M0P": {
+                        "data": "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>\n<PropertyValues>\n\n  <property id=\"ResetOnRestart\">\n    <curValue>0</curValue>\n  </property>\n\n  <property id=\"RestartOnSymbolLoad\">\n    <curValue>0</curValue>\n  </property>\n\n  <property id=\"VerifyAfterProgramLoad\">\n    <curValue>Full verification</curValue>\n  </property>\n\n  <property id=\"HaltOnConnect\">\n    <curValue>1</curValue>\n  </property>\n\n  <property id=\"AutoResetOnConnect\">\n    <curValue>0</curValue>\n  </property>\n\n  <property id=\"FlashResetType\">\n    <curValue>Soft reset</curValue>\n  </property>\n\n  <property id=\"FlashFiles\">\n    <curValue></curValue>\n  </property>\n\n</PropertyValues>\n"
+                    }
+                }
+            }
+        },
+        {
+            "name": "TEST18",
+            "type": "ccs-debug",
+            "request": "launch",
+            "projectInfo": {
+                "name": "TEST18",
+                "resourceId": "/TEST18"
+            },
+            "debuggerSettings": {
+                "targetConfigs/MSPM0G3507.ccxml": {
+                    "Texas Instruments XDS110 USB Debug Probe/CORTEX_M0P": {
+                        "data": "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>\n<PropertyValues>\n\n  <property id=\"FlashFiles\">\n    <curValue></curValue>\n  </property>\n\n</PropertyValues>\n"
+                    }
+                }
+            }
+        }
+    ]
+}
