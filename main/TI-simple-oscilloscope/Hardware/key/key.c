@@ -1,6 +1,8 @@
 #include "key.h"
 #include "pwm.h"
 #include "tft.h"
+#include "adc.h"
+#include "ti_msp_dl_config.h"
 #include <ti/driverlib/dl_gpio.h>
 #define delay_1ms(X) delay_cycles((CPUCLK_FREQ/1000) *X)
 static uint8_t keyValue=0;
@@ -15,29 +17,6 @@ static uint8_t key3_state = 0;
 void Init_Key_GPIO(void)
 {
     NVIC_EnableIRQ(GPIO_MULTIPLE_GPIOA_INT_IRQN);
-	// //使能时钟
-    // rcu_periph_clock_enable(RCU_GPIOB);
-	
-	// //设置输出模式，上拉
-    // gpio_mode_set(GPIOB, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, GPIO_PIN_3|GPIO_PIN_9|GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15);
-
-    // //中断线使能
-    // nvic_irq_enable(EXTI4_15_IRQn,3U);
-    
-    // //配置中断线
-    // syscfg_exti_line_config(EXTI_SOURCE_GPIOB,EXTI_SOURCE_PIN13);
-    // syscfg_exti_line_config(EXTI_SOURCE_GPIOB,EXTI_SOURCE_PIN14);
-	// 	syscfg_exti_line_config(EXTI_SOURCE_GPIOB,EXTI_SOURCE_PIN15);
-    
-    // //初始化中断线，设置为中断模式，下降沿触发
-    // exti_init(EXTI_13,EXTI_INTERRUPT,EXTI_TRIG_FALLING);
-    // exti_init(EXTI_14,EXTI_INTERRUPT,EXTI_TRIG_FALLING);
-    // exti_init(EXTI_15,EXTI_INTERRUPT,EXTI_TRIG_FALLING);
-    
-    // //中断标志位清除
-    // exti_interrupt_flag_clear(EXTI_13);
-    // exti_interrupt_flag_clear(EXTI_14);
-    // exti_interrupt_flag_clear(EXTI_15);
 }
 
 /*
@@ -47,24 +26,7 @@ void Init_Key_GPIO(void)
 */
 void Init_EC11_GPIO(void)
 {
-	// //使能时钟GPIOB，CMP
-    // rcu_periph_clock_enable(RCU_GPIOB);
-	// rcu_periph_clock_enable(RCU_CFGCMP);
-	
-	// //设置引脚模式，上拉
-	// gpio_mode_set(GPIOB,GPIO_MODE_INPUT,GPIO_PUPD_PULLUP,GPIO_PIN_4);
-	
-	// //中断线使能
-	// nvic_irq_enable(EXTI4_15_IRQn,3U);
-	
-	// //配置中断线
-	// syscfg_exti_line_config(EXTI_SOURCE_GPIOB,EXTI_SOURCE_PIN4);
-	
-	// //初始化中断线，设置为中断模式，上升沿下降沿触发
-	// exti_init(EXTI_4,EXTI_INTERRUPT,EXTI_TRIG_BOTH);
-	
-	// //中断标志位清除
-	// exti_interrupt_flag_clear(EXTI_4);
+
 }
 
 /*
@@ -79,99 +41,77 @@ void Key_Handle(volatile struct Oscilloscope *value)
 	switch((*value).keyValue)
 	{
 		case KEY1PRESS:
-        printf("key1 down\r\n");
-            // (*value).pwmOut=((uint32_t)(*value).timerPeriod*0.04f)+(*value).pwmOut;
-            // if((*value).pwmOut > (*value).timerPeriod)
-            // {
-            //     (*value).pwmOut = 0;
-            // }
-            // Set_Output_PWMComparex((*value).pwmOut);
+            (*value).pwmOut=((uint32_t)(*value).timerPeriod*0.04f)+(*value).pwmOut;
+            if((*value).pwmOut > (*value).timerPeriod)
+            {
+                (*value).pwmOut = 0;
+            }
+            Set_Output_PWMComparex((*value).pwmOut);
 			break;
         case KEY3PRESS:
-        printf("key3 down\r\n");
-            // tempValue=(*value).pwmOut/((*value).timerPeriod+0.0f);
-            // (*value).timerPeriod = (*value).timerPeriod/2;
-            // if((*value).timerPeriod < 250)
-            // {
-            //     (*value).timerPeriod = 1000;
-            // }
-            // (*value).outputFreq = 1000000/(*value).timerPeriod;
-            // (*value).pwmOut = (uint16_t)((*value).timerPeriod*tempValue);
-            // Set_Output_PWMComparex((*value).pwmOut);
-            // Set_Output_Freq((*value).timerPeriod-1);
-            // tempValue=0;
+            tempValue=(*value).pwmOut/((*value).timerPeriod+0.0f);//记录当前占空比百分比
+            (*value).timerPeriod = (*value).timerPeriod/2;//当前PWM频率2分频
+            printf("timerPeriod = %d\r\n",(*value).timerPeriod);
+            if((*value).timerPeriod <= 1000)
+            {
+                (*value).timerPeriod = 32000;
+            }
+            (*value).outputFreq = CPUCLK_FREQ/(*value).timerPeriod;
+            (*value).pwmOut = (uint16_t)((*value).timerPeriod*tempValue);//计算占占空比
+
+            if( (*value).ouptputbit == 0 )  //如果是PWM开启的状态
+                Init_PWM_Output_disable((*value).timerPeriod-1,(*value).pwmOut);//关闭PWM输出
+            else//如果是PWM关闭的状态
+                Init_PWM_Output((*value).timerPeriod-1,(*value).pwmOut);//开启PWM输出   
+            tempValue=0;
 			break;
         case KEY2PRESS:
         printf("key2 down\r\n");
-            // if((*value).ouptputbit == 0)
-            // {
-            //     (*value).ouptputbit=1;
-            //     //timer_enable(TIMER14);
-            // }
-            // else
-            // {
-            //     (*value).ouptputbit=0;
-            //    //timer_disable(TIMER14); 
-            // }
+            if((*value).ouptputbit == 0)
+            {
+                (*value).ouptputbit=1;
+                Init_PWM_Output((*value).timerPeriod-1,(*value).pwmOut);//开启PWM输出    
+            }
+            else
+            {
+                (*value).ouptputbit=0;
+                Init_PWM_Output_disable((*value).timerPeriod-1,(*value).pwmOut);//关闭PWM输出
+            }
             break;
         case KEYAPRESS:
-        printf("keyA down\r\n");
-            // switch((*value).sampletime)
-            // {
-            //     case ADC_SAMPLETIME_239POINT5:
-            //         (*value).sampletime=ADC_SAMPLETIME_71POINT5;
-            //         break;
-            //     case ADC_SAMPLETIME_71POINT5:
-            //         (*value).sampletime=ADC_SAMPLETIME_55POINT5;
-            //         break;
-            //     case ADC_SAMPLETIME_55POINT5:
-            //         (*value).sampletime=ADC_SAMPLETIME_41POINT5;
-            //         break;
-            //     case ADC_SAMPLETIME_41POINT5:
-            //         (*value).sampletime=ADC_SAMPLETIME_28POINT5;
-            //         break;
-            //     case ADC_SAMPLETIME_28POINT5:
-            //         (*value).sampletime=ADC_SAMPLETIME_239POINT5;
-            //         break;
-            //     default:
-            //         (*value).sampletime=ADC_SAMPLETIME_239POINT5;
-            //         break;
-            // }
-            // //ADC常规通道配置--PA3，顺序组0，通道3，采样时间
-            // adc_regular_channel_config(0, ADC_CHANNEL_3, (*value).sampletime);            
+            printf("keyA down\r\n");
+            (*value).sampletime = (*value).sampletime + 1000;
+            if( (*value).sampletime > 10000 ) (*value).sampletime = 1000;
+
+            DL_ADC12_disableConversions(ADC12_0_INST);
+            DL_DMA_disableChannel(DMA, DMA_CH0_CHAN_ID);
+             
+            DL_ADC12_setSampleTime0(ADC12_0_INST,(*value).sampletime);    
+            
+            DL_ADC12_enableConversions(ADC12_0_INST);           
+            ADC_DMA_Init();
+            printf("sampletime=%d\r\n",(*value).sampletime);
             break;
         case KEYBPRESS:
-        printf("keyB down\r\n");
-            // switch((*value).sampletime)
-            // {
-            //     case ADC_SAMPLETIME_239POINT5:
-            //         (*value).sampletime=ADC_SAMPLETIME_28POINT5;
-            //         break;
-            //     case ADC_SAMPLETIME_71POINT5:
-            //         (*value).sampletime=ADC_SAMPLETIME_239POINT5;
-            //         break;
-            //     case ADC_SAMPLETIME_55POINT5:
-            //         (*value).sampletime=ADC_SAMPLETIME_71POINT5;
-            //         break;
-            //     case ADC_SAMPLETIME_41POINT5:
-            //         (*value).sampletime=ADC_SAMPLETIME_55POINT5;
-            //         break;
-            //     case ADC_SAMPLETIME_28POINT5:
-            //         (*value).sampletime=ADC_SAMPLETIME_41POINT5;
-            //         break;
-            //     default:
-            //         (*value).sampletime=ADC_SAMPLETIME_239POINT5;
-            //         break;
-            // }    
-            // //ADC常规通道配置--PA3，顺序组0，通道3，采样时间
-            // adc_regular_channel_config(0, ADC_CHANNEL_3, (*value).sampletime);   
+            printf("keyB down\r\n");
+            (*value).sampletime = (*value).sampletime - 1000;
+            if( (*value).sampletime < 1000 ) (*value).sampletime = 10000;
+            
+            DL_ADC12_disableConversions(ADC12_0_INST);
+            DL_DMA_disableChannel(DMA, DMA_CH0_CHAN_ID);
+
+            DL_ADC12_setSampleTime0(ADC12_0_INST,(*value).sampletime);    
+            
+            DL_ADC12_enableConversions(ADC12_0_INST);   
+            ADC_DMA_Init();
+            printf("sampletime=%d\r\n",(*value).sampletime);
             break;
 		default:
 			break;
 	}
     (*value).keyValue=0;
     //参数显示UI
-    // TFT_ShowUI(value); 
+    TFT_ShowUI(value); 
 }
 
 void KEYD_SCAN(volatile struct Oscilloscope *value)
@@ -263,16 +203,19 @@ void GROUP1_IRQHandler(void)//Group1的中断服务函数
     if((gpioA & GPIO_KEY_PIN_1_PIN) == GPIO_KEY_PIN_1_PIN)
     {
        key1_state = KEYPRESS;
+       oscilloscope.keyValue = KEY1PRESS;
        DL_GPIO_clearInterruptStatus(GPIO_KEY_PORT, GPIO_KEY_PIN_1_PIN);
     }
     if((gpioA & GPIO_KEY_PIN_2_PIN) == GPIO_KEY_PIN_2_PIN)
     {
        key2_state = KEYPRESS;
+       oscilloscope.keyValue = KEY2PRESS;
        DL_GPIO_clearInterruptStatus(GPIO_KEY_PORT, GPIO_KEY_PIN_2_PIN);
     }
     if((gpioA & GPIO_KEY_PIN_3_PIN) == GPIO_KEY_PIN_3_PIN)
     {
        key3_state = KEYPRESS;
+       oscilloscope.keyValue = KEY3PRESS;
        DL_GPIO_clearInterruptStatus(GPIO_KEY_PORT, GPIO_KEY_PIN_3_PIN);
     }
 }

@@ -8,6 +8,7 @@
 #include "pwm.h"
 #include "key.h"
 
+
 volatile struct Oscilloscope oscilloscope={0};
 
 void Init_Oscilloscope(volatile struct Oscilloscope *value);
@@ -63,6 +64,7 @@ int main(void)
     //初始化频率定时器2
     Init_FreqTimer();
     
+    
     //初始化静态UI
     TFT_StaticUI();
 
@@ -70,30 +72,42 @@ int main(void)
     while (1) 
     {
         //按键扫描
-        Key_Sacnf(&oscilloscope);
+        //Key_Sacnf(&oscilloscope);
         //按键处理
         Key_Handle(&oscilloscope);
         
         //如果获取电压值完成，开始刷屏
         if(oscilloscope.showbit==1)
         {           
+            DL_DMA_disableChannel(DMA, DMA_CH0_CHAN_ID);
+            DL_ADC12_stopConversion(ADC12_0_INST);
+
             oscilloscope.showbit=0;
             oscilloscope.vpp=0;
             min = 9999;
             //转换电压值
+
             for(i=0;i<300;i++)
             {
                 adcValue = (Get_ADC_Value(i)*3.3f)/4095.0f;
-                oscilloscope.voltageValue[i] = (5-(2.0f*adcValue));
-							
+                //假设Vdac=1.642V，Vin=3.3V，Vout=adcValue
+                //( (3*Vdac) /2) - (Vin/2) = Vout
+                //根据已知条件，将等式转换为:
+                //Vin = (((3*Vdac) /2) - Vout) * 2
+                //简化得到公示:
+                //Vin = (2.463 - adcValue) * 2
+                oscilloscope.voltageValue[i] = (2.463 - adcValue) * 2.0;		
+                //寻找峰峰值
                 if((oscilloscope.vpp) < oscilloscope.voltageValue[i])
                 {
                     oscilloscope.vpp = oscilloscope.voltageValue[i];
                 }
+                //寻找最小值
                 if(min > oscilloscope.voltageValue[i])
                 {
                     min = oscilloscope.voltageValue[i];
                 }
+                //如果峰峰值小于0.3V，则说明没有输入信号
                 if(oscilloscope.vpp <= 0.3)
                 {
                     oscilloscope.gatherFreq=0;
@@ -101,8 +115,9 @@ int main(void)
             }
             
             //刷屏的同时获取电压值
-            DL_DMA_disableChannel(DMA, DMA_CH0_CHAN_ID);
-
+            ADC_DMA_Init();
+            
+            
             //找到起始显示波形值
             for(i=0;i<200;i++)
             {
@@ -123,13 +138,13 @@ int main(void)
             //如果幅值过小，会出现放大倍数过大导致波形显示异常的问题
             if(oscilloscope.vpp > 0.3)
             {
-								//获取中间值,如果有负压，则需要先抬升为正压
-								if(min < -0.3){
-									median = oscilloscope.vpp;
-								}
-								else{
-									median = oscilloscope.vpp / 2.0f;
-								}
+                //获取中间值,如果有负压，则需要先抬升为正压
+                if(min < -0.3){
+                    median = oscilloscope.vpp;
+                }
+                else{
+                    median = oscilloscope.vpp / 2.0f;
+                }
 							
                 //放大倍数，需要确定放大之后的区间，我将波形固定显示在（18.75~41.25中），(41.25-18.75)/2=11.25f
                 gainFactor = 11.25f/median;
@@ -182,13 +197,13 @@ int main(void)
 void Init_Oscilloscope(volatile struct Oscilloscope *value)
 {
     (*value).showbit    =0;                         //清除显示标志位
-    //(*value).sampletime =ADC_SAMPLETIME_239POINT5;  //adc采样周期
+    (*value).sampletime =3;                         //adc采样周期
     (*value).keyValue   =0;                         //清楚按键值
-    (*value).ouptputbit =0;                         //输出标志位
+    (*value).ouptputbit =1;                         //输出标志位
     (*value).gatherFreq =0;                         //采集频率
     (*value).outputFreq =1000;                      //输出频率
-    (*value).pwmOut     =500;                       //PWM引脚输出的PWM占空比
-    (*value).timerPeriod=1000;                      //PWM输出定时器周期
+    (*value).pwmOut     =16000;                       //PWM引脚输出的PWM占空比
+    (*value).timerPeriod=32000;                      //PWM输出定时器周期
     (*value).vpp        =0.0f;                      //峰峰值
 }
 

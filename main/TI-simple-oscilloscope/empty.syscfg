@@ -13,6 +13,7 @@ const ADC12    = scripting.addModule("/ti/driverlib/ADC12", {}, false);
 const ADC121   = ADC12.addInstance();
 const CAPTURE  = scripting.addModule("/ti/driverlib/CAPTURE", {}, false);
 const CAPTURE1 = CAPTURE.addInstance();
+const DAC12    = scripting.addModule("/ti/driverlib/DAC12");
 const GPIO     = scripting.addModule("/ti/driverlib/GPIO", {}, false);
 const GPIO1    = GPIO.addInstance();
 const GPIO2    = GPIO.addInstance();
@@ -29,6 +30,9 @@ const UART1    = UART.addInstance();
 /**
  * Write custom configuration values to the imported modules.
  */
+const gate8  = system.clockTree["MFPCLKGATE"];
+gate8.enable = true;
+
 ADC121.$name                             = "ADC12_0";
 ADC121.configureDMA                      = true;
 ADC121.sampCnt                           = 1;
@@ -36,9 +40,10 @@ ADC121.enabledDMATriggers                = ["DL_ADC12_DMA_MEM0_RESULT_LOADED"];
 ADC121.repeatMode                        = true;
 ADC121.adcMem0chansel                    = "DL_ADC12_INPUT_CHAN_6";
 ADC121.adcMem0_name                      = "6";
-ADC121.powerDownMode                     = "DL_ADC12_POWER_DOWN_MODE_MANUAL";
-ADC121.sampleTime0                       = "1 us";
 ADC121.enabledInterrupts                 = ["DL_ADC12_INTERRUPT_DMA_DONE"];
+ADC121.powerDownMode                     = "DL_ADC12_POWER_DOWN_MODE_MANUAL";
+ADC121.sampClkDiv                        = "DL_ADC12_CLOCK_DIVIDE_32";
+ADC121.sampleTime0                       = "100 us";
 ADC121.peripheral.$assign                = "ADC0";
 ADC121.peripheral.adcPin6.$assign        = "PB20";
 ADC121.DMA_CHANNEL.$name                 = "DMA_CH0";
@@ -56,14 +61,22 @@ Board.peripheral.swclkPin.$assign = "PA20";
 Board.peripheral.swdioPin.$assign = "PA19";
 
 CAPTURE1.$name                      = "CAPTURE_0";
-CAPTURE1.timerClkPrescale           = 32;
-CAPTURE1.timerStartTimer            = true;
 CAPTURE1.ccIndex                    = 1;
+CAPTURE1.timerStartTimer            = true;
+CAPTURE1.captMode                   = "EDGE_TIME_UP";
 CAPTURE1.interrupts                 = ["CC1_UP"];
-CAPTURE1.timerPeriod                = "65.536 ms";
+CAPTURE1.timerPeriod                = "65.535 ms";
+CAPTURE1.timerClkPrescale           = 32;
 CAPTURE1.peripheral.$assign         = "TIMG8";
 CAPTURE1.peripheral.ccp1Pin.$assign = "PB19";
 CAPTURE1.ccp1PinConfig.$name        = "ti_driverlib_gpio_GPIOPinGeneric4";
+
+DAC12.dacOutputPinEn            = true;
+DAC12.dacOutput12               = 2050;
+DAC12.dacSampleTimerRate        = "16K";
+DAC12.dacAmplifier              = "ON";
+DAC12.peripheral.OutPin.$assign = "PA15";
+DAC12.OutPinConfig.$name        = "ti_driverlib_gpio_GPIOPinGeneric6";
 
 GPIO1.$name                              = "GPIO_LCD";
 GPIO1.associatedPins.create(4);
@@ -155,14 +168,16 @@ GPIO4.associatedPins[1].internalResistor = "PULL_UP";
 GPIO4.associatedPins[1].assignedPort     = "PORTA";
 GPIO4.associatedPins[1].assignedPin      = "31";
 
-PWM1.$name                = "PWM_0";
-PWM1.ccIndex              = [1];
-PWM1.timerStartTimer      = true;
-PWM1.timerCount           = 32000;
-PWM1.peripheral.$assign   = "TIMG12";
-PWM1.ccp1PinConfig.$name  = "ti_driverlib_gpio_GPIOPinGeneric5";
-PWM1.PWM_CHANNEL_1.$name  = "ti_driverlib_pwm_PWMTimerCC0";
-PWM1.PWM_CHANNEL_1.invert = true;
+PWM1.$name                      = "PWM_0";
+PWM1.ccIndex                    = [1];
+PWM1.timerStartTimer            = true;
+PWM1.timerCount                 = 32000;
+PWM1.peripheral.$assign         = "TIMG12";
+PWM1.peripheral.ccp1Pin.$assign = "PB24";
+PWM1.ccp1PinConfig.$name        = "ti_driverlib_gpio_GPIOPinGeneric5";
+PWM1.PWM_CHANNEL_1.$name        = "ti_driverlib_pwm_PWMTimerCC0";
+PWM1.PWM_CHANNEL_1.invert       = true;
+PWM1.PWM_CHANNEL_1.dutyCycle    = 50;
 
 SPI1.frameFormat                        = "MOTO3";
 SPI1.$name                              = "SPI_LCD";
@@ -183,7 +198,8 @@ SPI1.mosiPinConfig.passedPeripheralType = scripting.forceWrite("Digital");
 SPI1.mosiPinConfig.$name                = "ti_driverlib_gpio_GPIOPinGeneric1";
 
 SYSCTL.forceDefaultClkConfig = true;
-SYSCTL.peripheral.$assign    = "SYSCTL";
+SYSCTL.clockTreeEn           = true;
+SYSCTL.validateClkStatus     = true;
 
 UART1.$name                    = "UART_0";
 UART1.interruptPriority        = "1";
@@ -200,6 +216,7 @@ ProjectConfig.migrationCondition = true;
  * re-solve from scratch.
  */
 ADC121.DMA_CHANNEL.peripheral.$suggestSolution = "DMA_CH0";
+DAC12.peripheral.$suggestSolution              = "DAC0";
 GPIO1.associatedPins[0].pin.$suggestSolution   = "PB9";
 GPIO1.associatedPins[1].pin.$suggestSolution   = "PA21";
 GPIO1.associatedPins[2].pin.$suggestSolution   = "PA22";
@@ -211,5 +228,4 @@ GPIO3.associatedPins[1].pin.$suggestSolution   = "PA13";
 GPIO3.associatedPins[2].pin.$suggestSolution   = "PA16";
 GPIO4.associatedPins[0].pin.$suggestSolution   = "PA28";
 GPIO4.associatedPins[1].pin.$suggestSolution   = "PA31";
-PWM1.peripheral.ccp1Pin.$suggestSolution       = "PB14";
 UART1.peripheral.$suggestSolution              = "UART0";

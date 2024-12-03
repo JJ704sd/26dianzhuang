@@ -83,16 +83,6 @@ static void SPI0_Write16(uint16_t data)
 */
 static void TFT_GPIO_Init(void)
 {
-    // //使能时钟
-    // rcu_periph_clock_enable(RCU_GPIOB);
-    
-    // //设置输出模式，不上下拉
-    // gpio_mode_set(GPIOB, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7|GPIO_PIN_8);
-    
-    // //设置输出类型，推挽输出，50Mhz
-    // gpio_output_options_set(GPIOB, GPIO_OTYPE_PP, GPIO_OSPEED_50MHZ, GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7|GPIO_PIN_8);
-
-    // gpio_bit_set(GPIOB,GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7|GPIO_PIN_8);
 }
 
 /*

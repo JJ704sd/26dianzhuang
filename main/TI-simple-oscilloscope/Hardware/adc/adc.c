@@ -40,12 +40,15 @@ void ADC_DMA_Init(void)
     DL_DMA_setSrcAddr(DMA, DMA_CH0_CHAN_ID, (uint32_t) &ADC0->ULLMEM.MEMRES[0]);
     //设置DMA搬运的目的地址
     DL_DMA_setDestAddr(DMA, DMA_CH0_CHAN_ID, (uint32_t) &adc_value[0]);
+
+    DL_DMA_setTransferSize(DMA, DMA_CH0_CHAN_ID, ADC_VALUE_NUM);
     //开启DMA
     DL_DMA_enableChannel(DMA, DMA_CH0_CHAN_ID);
     //开启ADC转换
     DL_ADC12_startConversion(ADC12_0_INST);
 }
 
+extern volatile struct Oscilloscope oscilloscope;
 
 void ADC0_IRQHandler(void)
 {
@@ -59,13 +62,3 @@ void ADC0_IRQHandler(void)
         DL_ADC12_clearInterruptStatus(ADC12_0_INST, DL_ADC12_INTERRUPT_DMA_DONE);
     }
 }
-
-// void DMA_Channel0_IRQHandler(void)
-// {
-//     if(dma_interrupt_flag_get(DMA_CH0, DMA_INT_FLAG_FTF)){
-//         oscilloscope.showbit=1;
-//         dma_channel_disable(DMA_CH0);
-//         //清除中断标志位
-//         dma_interrupt_flag_clear(DMA_CH0, DMA_INT_FLAG_G);
-//     }
-// }

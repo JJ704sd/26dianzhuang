@@ -4,7 +4,6 @@
 #include "ti_msp_dl_config.h"
 #include "main.h"
 
-extern volatile struct Oscilloscope oscilloscope;
 
 
 uint16_t Get_ADC_Value(uint16_t value);

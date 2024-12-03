@@ -5,5 +5,5 @@
 #include <stdio.h>
 
 void Init_USART(uint32_t bound);
-
+void uart0_send_char(char ch);
 #endif
