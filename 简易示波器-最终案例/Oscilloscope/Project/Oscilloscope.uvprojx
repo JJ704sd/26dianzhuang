@@ -16,8 +16,8 @@
         <TargetCommonOption>
           <Device>GD32E230C8</Device>
           <Vendor>GigaDevice</Vendor>
-          <PackID>GigaDevice.GD32E23x_DFP.1.0.2</PackID>
-          <PackURL>https://gd32mcu.com/data/documents/pack/</PackURL>
+          <PackID>GigaDevice.GD32E23x_DFP.1.1.0</PackID>
+          <PackURL>http://gd32mcu.com/data/documents/pack/</PackURL>
           <Cpu>IRAM(0x20000000,0x0002000) IROM(0x08000000,0x0010000) CPUTYPE("Cortex-M23") CLOCK(12000000) ELITTLE</Cpu>
           <FlashUtilSpec></FlashUtilSpec>
           <StartupFile></StartupFile>

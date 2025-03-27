@@ -172,11 +172,11 @@ int main(void)
 								}
                 if(voltage >= median)
                 {
-                    voltage = 30 - (voltage - median)*gainFactor;
+                    voltage = 30 + (voltage - median)*gainFactor;
                 }
                 else
                 {
-                    voltage = 30 + (median - voltage)*gainFactor;
+                    voltage = 30 - (median - voltage)*gainFactor;
                 }
                 drawCurve(80,voltage);
             }          
