@@ -50,8 +50,9 @@ int main(void)
     Init_LED_GPIO();
     
     //屏幕初始化
+		delay_1ms(1000);
     TFT_Init();
-    
+		
     //填充白色
     TFT_Fill(0,0,160,128,BLACK);
     
@@ -110,7 +111,7 @@ int main(void)
                     oscilloscope.gatherFreq=0;
                 }
             }
-            
+            oscilloscope.vpp = oscilloscope.vpp - min;
             //刷屏的同时获取电压值
             dma_transfer_number_config(DMA_CH0, 300);
             dma_channel_enable(DMA_CH0);
@@ -183,7 +184,6 @@ int main(void)
         }        
         //参数显示UI
         TFT_ShowUI(&oscilloscope); 
-        
     }
 }
 

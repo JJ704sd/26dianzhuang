@@ -3,7 +3,7 @@
 <title>Static Call Graph - [.\Objects\Oscilloscope.axf]</title></head>
 <body><HR>
 <H1>Static Call Graph for image .\Objects\Oscilloscope.axf</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 6190004: Last Updated: Thu Mar 27 13:42:56 2025
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 6190004: Last Updated: Wed May 28 12:00:56 2025
 <BR><P>
 <H3>Maximum Stack Usage =        552 bytes + Unknown(Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
@@ -192,9 +192,9 @@ Global Symbols
 <P><STRONG><a name="[86]"></a>__aeabi_fmul</STRONG> (Thumb, 122 bytes, Stack size 16 bytes, fmul.o(.text))
 <BR><BR>[Stack]<UL><LI>Max Depth = 16<LI>Call Chain = __aeabi_fmul
 </UL>
-<BR>[Called By]<UL><LI><a href="#[58]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;delay_1ms
-<LI><a href="#[8a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;TFT_ShowUI
+<BR>[Called By]<UL><LI><a href="#[8a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;TFT_ShowUI
 <LI><a href="#[85]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Key_Handle
+<LI><a href="#[58]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;delay_1ms
 <LI><a href="#[ad]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;systick_config
 <LI><a href="#[22]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 </UL>
@@ -255,9 +255,9 @@ Global Symbols
 </UL>
 <BR>[Calls]<UL><LI><a href="#[29]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;_float_epilogue
 </UL>
-<BR>[Called By]<UL><LI><a href="#[58]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;delay_1ms
-<LI><a href="#[8a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;TFT_ShowUI
+<BR>[Called By]<UL><LI><a href="#[8a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;TFT_ShowUI
 <LI><a href="#[85]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Key_Handle
+<LI><a href="#[58]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;delay_1ms
 <LI><a href="#[ad]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;systick_config
 </UL>
 
@@ -936,6 +936,7 @@ Global Symbols
 <LI><a href="#[8b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Key_Sacnf
 <LI><a href="#[4e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Init_ADC
 <LI><a href="#[9a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;TFT_Init
+<LI><a href="#[22]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 </UL>
 
 <P><STRONG><a name="[49]"></a>dma_channel_disable</STRONG> (Thumb, 28 bytes, Stack size 4 bytes, gd32e23x_dma.o(.text.dma_channel_disable))
@@ -1095,7 +1096,7 @@ Global Symbols
 <LI><a href="#[99]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;TFT_GPIO_Init
 </UL>
 
-<P><STRONG><a name="[22]"></a>main</STRONG> (Thumb, 784 bytes, Stack size 80 bytes, main.o(.text.main))
+<P><STRONG><a name="[22]"></a>main</STRONG> (Thumb, 808 bytes, Stack size 80 bytes, main.o(.text.main))
 <BR><BR>[Stack]<UL><LI>Max Depth = 552<LI>Call Chain = main &rArr; Key_Handle &rArr; TFT_ShowUI &rArr; TFT_ShowString &rArr; TFT_ShowChar &rArr; TFT_DrawPoint &rArr; TFT_Address_Set16 &rArr; TFT_WR_REG16 &rArr; SPI0_Write16 &rArr; spi_i2s_data_transmit
 </UL>
 <BR>[Calls]<UL><LI><a href="#[8a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;TFT_ShowUI
@@ -1129,6 +1130,7 @@ Global Symbols
 <LI><a href="#[7b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Init_USART
 <LI><a href="#[98]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;TFT_Fill
 <LI><a href="#[9a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;TFT_Init
+<LI><a href="#[58]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;delay_1ms
 <LI><a href="#[6c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Init_LED_GPIO
 <LI><a href="#[ad]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;systick_config
 <LI><a href="#[ac]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Init_Oscilloscope

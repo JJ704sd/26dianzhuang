@@ -529,7 +529,7 @@ void TFT_StaticUI(void)
     TFT_ShowString(110,106,(uint8_t *)showData,BLACK,YELLOW,16,0);  
     memset(showData,0,32);
     
-    TFT_ShowChinese(5,92,(uint8_t *)"输入幅值",WHITE,PURPLE,12,0);
+    TFT_ShowChinese(5,92,(uint8_t *)"输入峰值",WHITE,PURPLE,12,0);
     
     TFT_ShowChinese(55,92,(uint8_t *)"输入频率",WHITE,PURPLE,12,0);
     

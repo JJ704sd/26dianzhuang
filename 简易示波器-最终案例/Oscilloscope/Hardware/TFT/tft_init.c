@@ -129,16 +129,16 @@ static void SPI0_Write16(uint16_t data)
 */
 static void TFT_GPIO_Init(void)
 {
-    //使能时钟
-    rcu_periph_clock_enable(RCU_GPIOB);
-    
-    //设置输出模式，不上下拉
-    gpio_mode_set(GPIOB, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7|GPIO_PIN_8);
-    
-    //设置输出类型，推挽输出，50Mhz
-    gpio_output_options_set(GPIOB, GPIO_OTYPE_PP, GPIO_OSPEED_50MHZ, GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7|GPIO_PIN_8);
+		//使能时钟
+		rcu_periph_clock_enable(RCU_GPIOB);
+		
+		//设置输出模式，不上下拉
+		gpio_mode_set(GPIOB, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7|GPIO_PIN_8);
+		
+		//设置输出类型，推挽输出，50Mhz
+		gpio_output_options_set(GPIOB, GPIO_OTYPE_PP, GPIO_OSPEED_50MHZ, GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7|GPIO_PIN_8);
 
-    gpio_bit_set(GPIOB,GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7|GPIO_PIN_8);
+		gpio_bit_set(GPIOB,GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7|GPIO_PIN_8);
 }
 
 /*
@@ -312,16 +312,16 @@ void TFT_Address_Set16(uint16_t x1,uint16_t y1,uint16_t x2,uint16_t y2)
 
 void TFT_Init(void)
 {
-    TFT_GPIO_Init();
-    Init_SPI0_GPIO();
+	TFT_GPIO_Init();
+	Init_SPI0_GPIO();
     
-    gpio_bit_reset(GPIOB,GPIO_PIN_5);   //复位
-    delay_1ms(100);
-    gpio_bit_set(GPIOB,GPIO_PIN_5);     //
-    delay_1ms(100);
-    
-    gpio_bit_set(GPIOB,GPIO_PIN_8);     //打开背光
-    delay_1ms(100);
+	gpio_bit_reset(GPIOB,GPIO_PIN_5);   //复位
+	delay_1ms(100);
+	gpio_bit_set(GPIOB,GPIO_PIN_5);     //
+	delay_1ms(100);
+	
+	gpio_bit_set(GPIOB,GPIO_PIN_8);     //打开背光
+	delay_1ms(100);
     
 	//************* Start Initial Sequence **********//
 	TFT_WR_REG(0x11); //Sleep out 
