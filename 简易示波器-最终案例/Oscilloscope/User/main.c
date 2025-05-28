@@ -37,6 +37,9 @@ int main(void)
 	
 		float adcValue = 0;
     
+		//校准电压值，如果测量GND不为0的话需要校准
+		float calibration_vol = 0.3f;
+		
     //触发沿标记
     uint16_t Trigger_number=0;
     
@@ -111,7 +114,7 @@ int main(void)
                     oscilloscope.gatherFreq=0;
                 }
             }
-            oscilloscope.vpp = oscilloscope.vpp - min;
+            oscilloscope.vpp = oscilloscope.vpp - calibration_vol;
             //刷屏的同时获取电压值
             dma_transfer_number_config(DMA_CH0, 300);
             dma_channel_enable(DMA_CH0);
