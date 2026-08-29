@@ -3,54 +3,111 @@
 <pre>
 <h1>µVision Build Log</h1>
 <h2>Tool Versions:</h2>
-IDE-Version: ¦ÌVision V5.38.0.0
-Copyright (C) 2022 ARM Ltd and ARM Germany GmbH. All rights reserved.
-License Information: abc abc, abc, LIC=21E4T-RX09G-74YS0-B3B2I-JFC8E-HWIHZ
+IDE-Version: ¦ÌVision V5.43.1.0
+Copyright (C) 2025 ARM Ltd and ARM Germany GmbH. All rights reserved.
+License Information: Jiao JJ, BY56, LIC=----
  
 Tool Versions:
-Toolchain:       MDK-ARM Plus  Version: 5.38.0.0
-Toolchain Path:  D:\Keil_Arm\ARM\ARMCLANG\Bin
-C Compiler:      ArmClang.exe V6.19
-Assembler:       Armasm.exe V6.19
-Linker/Locator:  ArmLink.exe V6.19
-Library Manager: ArmAr.exe V6.19
-Hex Converter:   FromElf.exe V6.19
+Toolchain:       MDK-Lite  Version: 5.43.0.0
+Toolchain Path:  D:\Keil 5\ARM\ARMCLANG\Bin
+C Compiler:      ArmClang.exe V6.24
+Assembler:       Armasm.exe V6.24
+Linker/Locator:  ArmLink.exe V6.24
+Library Manager: ArmAr.exe V6.24
+Hex Converter:   FromElf.exe V6.24
 CPU DLL:         
 Dialog DLL:      
-Target DLL:      CMSIS_AGDI_V8M.DLL V1.7.20.0
-Dialog DLL:      TCM.DLL V1.56.4.0
+Target DLL:      CMSIS_AGDI_V8M.DLL V1.8.8.0
+Dialog DLL:      TCM.DLL V1.56.6.0
  
 <h2>Project:</h2>
-C:\Users\lceda\Desktop\Oscilloscope-V2.0\Project\Oscilloscope.uvprojx
-Project File Date:  06/26/2025
+D:\26dianzhuang\code\GD32E230-Oscilloscope\Oscilloscope-V2.0\Project\Oscilloscope.uvprojx
+Project File Date:  08/29/2026
 
 <h2>Output:</h2>
-*** Using Compiler 'V6.19', folder: 'D:\Keil_Arm\ARM\ARMCLANG\Bin'
-Build target 'GD32E230C8T6'
-".\Objects\Oscilloscope.axf" - 0 Error(s), 0 Warning(s).
+*** Using Compiler 'V6.24', folder: 'D:\Keil 5\ARM\ARMCLANG\Bin'
+Rebuild target 'GD32E230C8T6'
+compiling gd32e23x_it.c...
+compiling systick.c...
+compiling gd32e23x_fmc.c...
+compiling hw_gpio.c...
+compiling gd32e23x_adc.c...
+compiling gd32e23x_fwdgt.c...
+compiling hw_tim.c...
+compiling main.c...
+compiling gd32e23x_gpio.c...
+compiling gd32e23x_misc.c...
+compiling gd32e23x_dbg.c...
+compiling gd32e23x_dma.c...
+../Hardware/hw_lcdinit.c(13): warning: while loop has empty body [-Wempty-body]
+   13 |                 while(spi_i2s_flag_get(SPI0,SPI_FLAG_TBE) == RESET);    //<B5>È´<FD><B7><A2><CB>Í»<BA><B3><E5><C7><F8><BF><D5><CF><D0>
+      |                                                                    ^
+../Hardware/hw_lcdinit.c(13): note: put the semicolon on a separate line to silence this warning
+../Hardware/hw_lcdinit.c(32): warning: while loop has empty body [-Wempty-body]
+   32 |         while(spi_i2s_flag_get(SPI0,SPI_FLAG_TBE) == RESET);    //<B5>È´<FD><B7><A2><CB>Í»<BA><B3><E5><C7><F8><BF><D5><CF><D0>
+      |                                                            ^
+../Hardware/hw_lcdinit.c(32): note: put the semicolon on a separate line to silence this warning
+../Hardware/hw_lcdinit.c(34): warning: while loop has empty body [-Wempty-body]
+   34 |         while(spi_i2s_flag_get(SPI0,SPI_FLAG_TBE) == RESET);    //<B5>È´<FD><B7><A2><CB>Í»<BA><B3><E5><C7><F8><BF><D5><CF><D0>
+      |                                                            ^
+../Hardware/hw_lcdinit.c(34): note: put the semicolon on a separate line to silence this warning
+../Hardware/hw_lcdinit.c(50): warning: while loop has empty body [-Wempty-body]
+   50 |         while(spi_i2s_flag_get(SPI0,SPI_FLAG_TBE) == RESET);    //<B5>È´<FD><B7><A2><CB>Í»<BA><B3><E5><C7><F8><BF><D5><CF><D0>
+      |                                                            ^
+../Hardware/hw_lcdinit.c(50): note: put the semicolon on a separate line to silence this warning
+4 warnings generated.
+compiling hw_lcdinit.c...
+compiling gd32e23x_timer.c...
+compiling gd32e23x_i2c.c...
+compiling gd32e23x_usart.c...
+compiling hw_spi.c...
+compiling gd32e23x_spi.c...
+assembling startup_gd32e23x.s...
+compiling hw_led.c...
+compiling gd32e23x_rcu.c...
+compiling gd32e23x_cmp.c...
+compiling gd32e23x_crc.c...
+compiling gd32e23x_wwdgt.c...
+compiling hw_key.c...
+compiling gd32e23x_exti.c...
+compiling hw_ec11.c...
+compiling gd32e23x_syscfg.c...
+compiling hw_adc.c...
+compiling gd32e23x_pmu.c...
+compiling system_gd32e23x.c...
+compiling mid_pwm.c...
+compiling mid_timer.c...
+compiling mid_adc.c...
+compiling gd32e23x_rtc.c...
+compiling osc_task.c...
+compiling mid_lcd.c...
+linking...
+Program Size: Code=22186 RO-data=7510 RW-data=16 ZI-data=6088  
+FromELF: creating hex file...
+".\Objects\Oscilloscope.axf" - 0 Error(s), 4 Warning(s).
 
 <h2>Software Packages used:</h2>
 
 Package Vendor: ARM
-                http://www.keil.com/pack/ARM.CMSIS.5.9.0.pack
-                ARM.CMSIS.5.9.0
+                https://www.keil.com/pack/ARM.CMSIS.6.3.0.pack
+                ARM::CMSIS@6.3.0
                 CMSIS (Common Microcontroller Software Interface Standard)
-   * Component: CORE Version: 5.6.0
+   * Component: CORE Version: 6.2.0
 
 Package Vendor: GigaDevice
                 http://gd32mcu.com/data/documents/pack/GigaDevice.GD32E23x_DFP.1.1.0.pack
-                GigaDevice.GD32E23x_DFP.1.1.0
+                GigaDevice::GD32E23x_DFP@1.1.0
                 GigaDevice GD32E23x Series Device Support and Examples
 
 <h2>Collection of Component include folders:</h2>
   ./RTE/_GD32E230C8T6
-  D:/Keil_Arm/Pack/ARM/CMSIS/5.9.0/CMSIS/Core/Include
-  D:/Keil_Arm/Pack/GigaDevice/GD32E23x_DFP/1.1.0/Device/Include
+  D:/Keil 5/ARM/CMSIS/6.3.0/CMSIS/Core/Include
+  D:/Keil 5/GigaDevice/GD32E23x_DFP/1.1.0/Device/Include
 
 <h2>Collection of Component Files used:</h2>
 
-   * Component: ARM::CMSIS:CORE:5.6.0
-Build Time Elapsed:  00:00:00
+   * Component: ARM::CMSIS:CORE@6.2.0
+Build Time Elapsed:  00:00:03
 </pre>
 </body>
 </html>

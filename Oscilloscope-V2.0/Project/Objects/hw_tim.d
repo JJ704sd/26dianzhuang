@@ -1,10 +1,6 @@
 ./objects/hw_tim.o: ..\Hardware\hw_tim.c ..\Hardware\hw_tim.h \
   ..\User\main.h ..\Firmware\CMSIS\GD\GD32E23x\Include\gd32e23x.h \
-  D:\Keil_Arm\Pack\ARM\CMSIS\5.9.0\CMSIS\Core\Include\core_cm23.h \
-  D:\Keil_Arm\ARM\ARMCLANG\Bin\..\include\stdint.h \
-  D:\Keil_Arm\Pack\ARM\CMSIS\5.9.0\CMSIS\Core\Include\cmsis_version.h \
-  D:\Keil_Arm\Pack\ARM\CMSIS\5.9.0\CMSIS\Core\Include\cmsis_compiler.h \
-  D:\Keil_Arm\Pack\ARM\CMSIS\5.9.0\CMSIS\Core\Include\cmsis_armclang.h \
+  D:\Keil\ 5\ARM\CMSIS\6.3.0\CMSIS\Core\Include\core_cm23.h \
   ..\Firmware\CMSIS\GD\GD32E23x\Include\system_gd32e23x.h \
   ..\User\gd32e23x_libopt.h \
   ..\Firmware\GD32E23x_standard_peripheral\Include\gd32e23x_adc.h \

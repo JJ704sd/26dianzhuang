@@ -1,10 +1,6 @@
 ./objects/main.o: ..\User\main.c \
   ..\Firmware\CMSIS\GD\GD32E23x\Include\gd32e23x.h \
-  D:\Keil_Arm\Pack\ARM\CMSIS\5.9.0\CMSIS\Core\Include\core_cm23.h \
-  D:\Keil_Arm\ARM\ARMCLANG\Bin\..\include\stdint.h \
-  D:\Keil_Arm\Pack\ARM\CMSIS\5.9.0\CMSIS\Core\Include\cmsis_version.h \
-  D:\Keil_Arm\Pack\ARM\CMSIS\5.9.0\CMSIS\Core\Include\cmsis_compiler.h \
-  D:\Keil_Arm\Pack\ARM\CMSIS\5.9.0\CMSIS\Core\Include\cmsis_armclang.h \
+  D:\Keil\ 5\ARM\CMSIS\6.3.0\CMSIS\Core\Include\core_cm23.h \
   ..\Firmware\CMSIS\GD\GD32E23x\Include\system_gd32e23x.h \
   ..\User\gd32e23x_libopt.h \
   ..\Firmware\GD32E23x_standard_peripheral\Include\gd32e23x_adc.h \
@@ -26,10 +22,8 @@
   ..\Firmware\GD32E23x_standard_peripheral\Include\gd32e23x_wwdgt.h \
   ..\Firmware\GD32E23x_standard_peripheral\Include\gd32e23x_misc.h \
   ..\Firmware\GD32E23x_standard_peripheral\Include\gd32e23x_cmp.h \
-  ..\User\systick.h D:\Keil_Arm\ARM\ARMCLANG\Bin\..\include\string.h \
-  D:\Keil_Arm\ARM\ARMCLANG\Bin\..\include\stdio.h ..\Hardware\hw_led.h \
-  ..\User\main.h ..\Hardware\hw_gpio.h ..\Hardware\hw_key.h \
-  ..\Hardware\hw_ec11.h ..\Hardware\hw_lcdinit.h ..\Hardware\hw_spi.h \
-  ..\Hardware\hw_tim.h ..\Hardware\hw_adc.h ..\Middle\mid_timer.h \
-  ..\Middle\mid_pwm.h ..\Middle\mid_adc.h ..\Middle\mid_lcd.h \
-  ..\APP\osc_task.h
+  ..\User\systick.h ..\Hardware\hw_led.h ..\User\main.h \
+  ..\Hardware\hw_gpio.h ..\Hardware\hw_key.h ..\Hardware\hw_ec11.h \
+  ..\Hardware\hw_lcdinit.h ..\Hardware\hw_spi.h ..\Hardware\hw_tim.h \
+  ..\Hardware\hw_adc.h ..\Middle\mid_timer.h ..\Middle\mid_pwm.h \
+  ..\Middle\mid_adc.h ..\Middle\mid_lcd.h ..\APP\osc_task.h

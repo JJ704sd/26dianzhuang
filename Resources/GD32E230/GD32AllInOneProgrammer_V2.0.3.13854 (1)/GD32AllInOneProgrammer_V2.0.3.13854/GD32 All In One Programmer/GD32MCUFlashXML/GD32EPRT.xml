@@ -1,0 +1,9 @@
+<!--NodeType> complement !=FFFF is complement byte</NodeType-->
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<MCUGroup series = "GD32EPRT">
+    <Flash McuPartNo = "GD32EPRTXDXX" baseAddress="0x08000000" Size = "384">
+	    <pageGroup pageNumber = "48">
+            <Page startIndex= "0" endIndex = "47" startAddress = "0x08000000" endAddress = "0x0805FFFF" pageSize = "8192" bank = "0"/>
+        </pageGroup>
+    </Flash>
+</MCUGroup>

@@ -1,0 +1,24 @@
+<!--NodeType> complement !=FFFF is complement byte</NodeType-->
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<MCUGroup series = "GD32L233">
+	<Flash McuPartNo = "GD32L233X8XX" baseAddress="0x08000000" Size = "64">
+	    <pageGroup pageNumber = "64">
+            <Page startIndex= "0" endIndex = "63" startAddress = "0x08000000" endAddress = "0x0800FFFF" pageSize = "1024" bank = "0"/>
+        </pageGroup>
+    </Flash>
+	<Flash McuPartNo = "GD32L233XBXX" baseAddress="0x08000000" Size = "128">
+	    <pageGroup pageNumber = "64">
+            <Page startIndex= "0" endIndex = "63" startAddress = "0x08000000" endAddress = "0x0801FFFF" pageSize = "2048" bank = "0"/>
+        </pageGroup>
+    </Flash>
+	<Flash McuPartNo = "GD32L233XCXX" baseAddress="0x08000000" Size = "256">
+	    <pageGroup pageNumber = "64">
+            <Page startIndex= "0" endIndex = "63" startAddress = "0x08000000" endAddress = "0x0803FFFF" pageSize = "4096" bank = "0"/>
+        </pageGroup>
+    </Flash>
+	 <OTP baseAddress="0x1FFF7000" size="512" ifHasLockArea="0" minProgrammeBitWidth="32" maxProgrammeBitWidth="32">
+        <DataArea baseAddress="0x1FFF7000" size="512" BlockCnt="1" BlockSize="512">
+            <Block baseAddress="0x1FFF7000" endAddress="0x1FFF71FF"/>
+        </DataArea>
+    </OTP>
+</MCUGroup>

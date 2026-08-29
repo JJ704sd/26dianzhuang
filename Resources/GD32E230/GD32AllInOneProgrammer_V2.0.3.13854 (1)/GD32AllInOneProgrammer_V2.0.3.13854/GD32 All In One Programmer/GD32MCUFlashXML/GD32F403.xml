@@ -1,0 +1,85 @@
+<!--NodeType> complement !=FFFF is complement byte</NodeType-->
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<MCUGroup series = "GD32F403">
+	<Flash McuPartNo = "GD32F403XCXX" baseAddress="0x08000000" Size = "256">
+	    <pageGroup pageNumber = "128">
+            <Page startIndex= "0" endIndex = "127" startAddress = "0x08000000" endAddress = "0x0803FFFF" pageSize = "2048" bank = "0"/>
+		</pageGroup>
+    </Flash>
+	<Flash McuPartNo = "GD32F403XEXX" baseAddress="0x08000000" Size = "512">
+	    <pageGroup pageNumber = "256">
+            <Page startIndex= "0" endIndex = "255" startAddress = "0x08000000" endAddress = "0x0807FFFF" pageSize = "2048" bank = "0"/>
+		</pageGroup>
+    </Flash>
+	<Flash McuPartNo = "GD32F403XGXX" baseAddress="0x08000000" Size = "1024">
+	    <pageGroup pageNumber = "384">
+            <Page startIndex= "0" endIndex = "255" startAddress = "0x08000000" endAddress = "0x0807FFFF" pageSize = "2048" bank = "0"/>
+			<Page startIndex= "256" endIndex = "383" startAddress = "0x08080000" endAddress = "0x080FFFFF" pageSize = "4096" bank = "1"/>
+		</pageGroup>
+    </Flash>
+	<Flash McuPartNo = "GD32F403XIXX" baseAddress="0x08000000" Size = "2048">
+	    <pageGroup pageNumber = "640">
+            <Page startIndex= "0" endIndex = "255" startAddress = "0x08000000" endAddress = "0x0807FFFF" pageSize = "2048" bank = "0"/>
+			<Page startIndex= "256" endIndex = "639" startAddress = "0x08080000" endAddress = "0x081FFFFF" pageSize = "4096" bank = "1"/>
+		</pageGroup>
+    </Flash>
+	<Flash McuPartNo = "GD32F403XKXX" baseAddress="0x08000000" Size = "3072">
+	    <pageGroup pageNumber = "896">
+            <Page startIndex= "0" endIndex = "255" startAddress = "0x08000000" endAddress = "0x0807FFFF" pageSize = "2048" bank = "0"/>
+			<Page startIndex= "256" endIndex = "895" startAddress = "0x08080000" endAddress = "0x082FFFFF" pageSize = "4096" bank = "1"/>
+		</pageGroup>
+    </Flash>
+	<OTP baseAddress="0x1FFF7800" size="528">
+        <DataArea baseAddress="0x1FFF7800" size="512" BlockCnt="16" BlockSize="32">
+            <Block baseAddress="0x1FFF7800" endAddress="0x1FFF781F">
+                <Lock Offset="0" ByteCount="1" LockVal="0x00"/>
+            </Block>
+            <Block baseAddress="0x1FFF7820" endAddress="0x1FFF783F" >
+                <Lock Offset="1" ByteCount="1" LockVal="0x00"/>
+            </Block>
+            <Block baseAddress="0x1FFF7840" endAddress="0x1FFF785F" >
+                <Lock Offset="2" ByteCount="1" LockVal="0x00"/>
+            </Block>
+            <Block baseAddress="0x1FFF7860" endAddress="0x1FFF787F" >
+                <Lock Offset="3" ByteCount="1" LockVal="0x00"/>
+            </Block>
+            <Block baseAddress="0x1FFF7880" endAddress="0x1FFF789F" >
+                <Lock Offset="4" ByteCount="1" LockVal="0x00"/>
+            </Block>
+            <Block baseAddress="0x1FFF78A0" endAddress="0x1FFF78BF" >
+				<Lock Offset="5" ByteCount="1" LockVal="0x00"/>
+            </Block>
+            <Block baseAddress="0x1FFF78C0" endAddress="0x1FFF78EF" >
+                <Lock Offset="6" ByteCount="1" LockVal="0x00"/>
+            </Block>
+            <Block baseAddress="0x1FFF78E0" endAddress="0x1FFF78FF" >
+                <Lock Offset="7" ByteCount="1" LockVal="0x00"/>
+            </Block>
+            <Block baseAddress="0x1FFF7900" endAddress="0x1FFF791F" >
+                <Lock Offset="8" ByteCount="1" LockVal="0x00"/>
+            </Block>
+            <Block baseAddress="0x1FFF7920" endAddress="0x1FFF793F" >
+                <Lock Offset="9" ByteCount="1" LockVal="0x00"/>
+            </Block>
+            <Block baseAddress="0x1FFF7940" endAddress="0x1FFF795F" >
+                <Lock Offset="10" ByteCount="1" LockVal="0x00"/>
+            </Block>
+            <Block baseAddress="0x1FFF7960" endAddress="0x1FFF797F" >
+                <Lock Offset="11" ByteCount="1" LockVal="0x00"/>
+            </Block>
+            <Block baseAddress="0x1FFF7980" endAddress="0x1FFF799F" >
+                <Lock Offset="12" ByteCount="1" LockVal="0x00"/>
+            </Block>
+            <Block baseAddress="0x1FFF79A0" endAddress="0x1FFF79BF" >
+                <Lock Offset="13" ByteCount="1" LockVal="0x00"/>
+            </Block>
+            <Block baseAddress="0x1FFF79C0" endAddress="0x1FFF79EF" >
+                <Lock Offset="14" ByteCount="1" LockVal="0x00"/>
+            </Block>
+            <Block baseAddress="0x1FFF79E0" endAddress="0x1FFF79FF" >
+                <Lock Offset="15" ByteCount="1" LockVal="0x00"/>
+            </Block>
+		</DataArea>
+        <LockArea  baseAddress="0x1FFF7A00" size="16" />
+    </OTP>
+</MCUGroup>
