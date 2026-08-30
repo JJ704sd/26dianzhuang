@@ -20,6 +20,8 @@
 #define SCOPE_IDLE_SPAN_COUNTS   64U
 #define FAST_HISTORY_SAMPLES     800U
 #define FAST_DISPLAY_SAMPLES     WAVE_WIDTH
+#define SLOW_HISTORY_SAMPLES     1250U
+#define SCOPE_FAST_TIMEBASE_COUNT 5U
 #define ECG_HISTORY_SAMPLES      1250U
 #define ECG_HEART_PULSE_SAMPLES  45U
 #define ECG_SIGNAL_TIMEOUT       750U
@@ -32,16 +34,16 @@
 #define WAVE_BOTTOM  (WAVE_Y + WAVE_HEIGHT - 1U)
 
 static const uint16_t timebase_samples[ECG_TIMEBASE_COUNT] = {
-    250U, 500U, 1000U, 1500U
+    250U, 500U, 1000U, 1250U
 };
 static const char timebase_labels[ECG_TIMEBASE_COUNT][5] = {
-    "1.0s", "2.0s", "4.0s", "6.0s"
+    "1.0s", "2.0s", "4.0s", "5.0s"
 };
 static const uint16_t scope_timebase_samples[SCOPE_TIMEBASE_COUNT] = {
-    40U, 80U, 200U, 400U, 800U
+    40U, 80U, 200U, 400U, 800U, 250U, 500U, 1000U, 1250U
 };
 static const char scope_timebase_labels[SCOPE_TIMEBASE_COUNT][5] = {
-    " 2ms", " 4ms", "10ms", "20ms", "40ms"
+    " 2ms", " 4ms", "10ms", "20ms", "40ms", "1.0s", "2.0s", "4.0s", "5.0s"
 };
 
 static uint16_t adc_dma_samples[ADC_DMA_SAMPLES];
@@ -50,6 +52,9 @@ static uint16_t fast_display_samples[FAST_DISPLAY_SAMPLES];
 static volatile uint16_t fast_write_index;
 static volatile uint16_t fast_history_count;
 static volatile uint32_t fast_sample_count;
+static volatile uint8_t slow_history[SLOW_HISTORY_SAMPLES];
+static volatile uint16_t slow_write_index;
+static volatile uint16_t slow_history_count;
 static uint32_t ecg_decimation_sum;
 static uint16_t ecg_decimation_count;
 
@@ -100,9 +105,14 @@ void ECG_Init(uint16_t vref_value)
     for(i = 0U; i < FAST_HISTORY_SAMPLES; i++){
         fast_history[i] = 0U;
     }
+    for(i = 0U; i < SLOW_HISTORY_SAMPLES; i++){
+        slow_history[i] = 0U;
+    }
     fast_write_index = 0U;
     fast_history_count = 0U;
     fast_sample_count = 0U;
+    slow_write_index = 0U;
+    slow_history_count = 0U;
     ecg_decimation_sum = 0U;
     ecg_decimation_count = 0U;
     ecg_write_index = 0U;
@@ -175,7 +185,16 @@ static void ecg_adc_dma_callback(const uint16_t *samples, uint16_t count)
         ecg_decimation_sum += raw_value;
         ecg_decimation_count++;
         if(ecg_decimation_count >= ECG_DECIMATION){
-            ecg_process_sample((uint16_t)(ecg_decimation_sum / ECG_DECIMATION));
+            raw_value = (uint16_t)(ecg_decimation_sum / ECG_DECIMATION);
+            slow_history[slow_write_index] = (uint8_t)(raw_value >> 4U);
+            slow_write_index++;
+            if(slow_write_index >= SLOW_HISTORY_SAMPLES){
+                slow_write_index = 0U;
+            }
+            if(slow_history_count < SLOW_HISTORY_SAMPLES){
+                slow_history_count++;
+            }
+            ecg_process_sample(raw_value);
             ecg_decimation_sum = 0U;
             ecg_decimation_count = 0U;
         }
@@ -431,7 +450,7 @@ static uint32_t measure_sample_frequency(const uint16_t *samples, uint16_t count
             (sample_delta / 2U)) / sample_delta;
 }
 
-static void draw_fast_wave(uint16_t span_samples)
+static void draw_scope_wave(uint16_t span_samples, uint8_t slow_timebase)
 {
     uint16_t history_count;
     uint16_t write_index;
@@ -450,20 +469,35 @@ static void draw_fast_wave(uint16_t span_samples)
     uint8_t have_previous = 0U;
     uint32_t primask;
     uint32_t display_vpp_mv;
+    uint32_t acquisition_sample_rate_hz;
     uint32_t display_sample_rate_hz;
     int32_t y_position;
     scope_view_info_t view_info = {0U};
 
     primask = __get_PRIMASK();
     __disable_irq();
-    history_count = fast_history_count;
-    write_index = fast_write_index;
-    available = ScopeView_CopyWindow((const uint16_t *)fast_history,
-                                     FAST_HISTORY_SAMPLES, history_count,
-                                     write_index, span_samples,
-                                     scope_roll_phase, scope_view_mode,
-                                     fast_display_samples,
-                                     FAST_DISPLAY_SAMPLES, &view_info);
+    if(slow_timebase != 0U){
+        history_count = slow_history_count;
+        write_index = slow_write_index;
+        available = ScopeView_CopyPacked12Window((const uint8_t *)slow_history,
+                                                 SLOW_HISTORY_SAMPLES,
+                                                 history_count, write_index,
+                                                 span_samples, scope_roll_phase,
+                                                 scope_view_mode,
+                                                 fast_display_samples,
+                                                 FAST_DISPLAY_SAMPLES, &view_info);
+        acquisition_sample_rate_hz = ECG_SAMPLE_RATE_HZ;
+    }else{
+        history_count = fast_history_count;
+        write_index = fast_write_index;
+        available = ScopeView_CopyWindow((const uint16_t *)fast_history,
+                                         FAST_HISTORY_SAMPLES, history_count,
+                                         write_index, span_samples,
+                                         scope_roll_phase, scope_view_mode,
+                                         fast_display_samples,
+                                         FAST_DISPLAY_SAMPLES, &view_info);
+        acquisition_sample_rate_hz = ADC_SAMPLE_RATE_HZ;
+    }
     if(primask == 0U){
         __enable_irq();
     }
@@ -505,9 +539,9 @@ static void draw_fast_wave(uint16_t span_samples)
     if(scope_vpp_mv > 9999U){
         scope_vpp_mv = 9999U;
     }
-    display_sample_rate_hz = ADC_SAMPLE_RATE_HZ;
+    display_sample_rate_hz = acquisition_sample_rate_hz;
     if((source_available > 1U) && (available > 1U)){
-        display_sample_rate_hz = ((uint32_t)ADC_SAMPLE_RATE_HZ *
+        display_sample_rate_hz = (acquisition_sample_rate_hz *
                                   (available - 1U)) /
                                  (source_available - 1U);
     }
@@ -714,10 +748,13 @@ static void scope_static_ui(void)
 
 static void scope_wave_show(uint16_t vref_value)
 {
+    uint8_t slow_timebase;
+
     if(vref_value != 0U){
         ecg_vref_value = vref_value;
     }
-    draw_fast_wave(scope_timebase_samples[scope_timebase_index]);
+    slow_timebase = (uint8_t)(scope_timebase_index >= SCOPE_FAST_TIMEBASE_COUNT);
+    draw_scope_wave(scope_timebase_samples[scope_timebase_index], slow_timebase);
 }
 
 void TFT_StaticUI(void)

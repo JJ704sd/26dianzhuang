@@ -8,7 +8,7 @@
 #define OSC_RUN   0x02U
 
 #define ECG_TIMEBASE_COUNT 4U
-#define SCOPE_TIMEBASE_COUNT 5U
+#define SCOPE_TIMEBASE_COUNT 9U
 
 typedef enum
 {

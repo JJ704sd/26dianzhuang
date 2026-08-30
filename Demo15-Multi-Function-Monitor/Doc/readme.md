@@ -3,12 +3,18 @@
 Demo15 combines the three electrical-training deliverables in one independent
 GD32E230C8T6 project:
 
-1. `OSCILLOSCOPE`: 20 kSa/s PA3 acquisition, trigger/free-run views, Vpp and
-   frequency display, plus the PA2 PWM reference output.
+1. `OSCILLOSCOPE`: 20 kSa/s PA3 acquisition for 2-40 ms views plus a packed
+   250 Sa/s history for 1-5 s views, trigger/free-run display, Vpp and frequency
+   measurement, and the PA2 PWM reference output.
 2. `ECG_MONITOR`: a 250 Hz ECG history, heartbeat detection, BPM display and
    one-to-five-second timebase views.
 3. `HESS_ANALYZER`: the extended Demo14 analysis core with BPM, RR, RMSSD and
    signal-quality classification.
+
+SpO2 is not implemented in this firmware. The repository contains no blood-
+oxygen sensor driver, bus/pin contract or SpO2 algorithm, so the UI does not
+show fabricated oxygen-saturation values. A real SpO2 mode requires the exact
+sensor module and wiring to be defined first.
 
 The folder uses `DemoNN-Title-Case`; the Keil project and output use
 `Demo15_Multi_Function_Monitor` so paths remain ASCII and tool-friendly.
@@ -17,7 +23,8 @@ The folder uses `DemoNN-Title-Case`; the Keil project and output use
 
 - Hold `SW2` for two seconds: cycle `OSCILLOSCOPE -> ECG_MONITOR ->
   HESS_ANALYZER -> OSCILLOSCOPE`.
-- Rotate the encoder: change oscilloscope or ECG/HESS timebase.
+- Rotate the encoder: change the oscilloscope timebase from 2 ms through 5 s,
+  or change the ECG/HESS timebase.
 - Hold `SW1` for two seconds in `OSCILLOSCOPE`: toggle 5 Vpp/1 Vpp display
   range.
 - Press `SW1`: enable or disable PA2 PWM.
@@ -58,13 +65,14 @@ See `Spec/Demo15_MULTI_FUNCTION_MONITOR_SPEC.md` for acceptance checkpoints.
 - ArmClang 6.24 with size optimization (`-Oz`).
 - Device pack: `GigaDevice.GD32E23x_DFP 1.1.0`.
 - Result: `0 Error(s), 0 Warning(s)`.
-- Program size: Code 16578 B, RO data 6522 B.
-- Static RAM: RW 24 B plus ZI 5216 B = 5240 B.
-- Maximum analyzed stack: 320 B plus untraceable function pointers.
-- Static RAM plus analyzed stack leaves about 2632 B of the 8 KB SRAM before
-  untraceable-call and interrupt-stack overhead.
+- Program size: Code 17094 B, RO data 6550 B.
+- Image RAM: RW 24 B plus ZI 6472 B = 6496 B. The ZI total includes the
+  configured 1536 B stack, leaving 1696 B of the 8 KB SRAM unallocated.
+- The previous call-graph estimate used at most 320 B of stack, with the usual
+  caveat for indirect calls and interrupt nesting; it fits inside the reserved
+  stack.
 - HEX SHA-256:
-  `3275669E8DA8B9AE92D81F17EB06BBD7C9789777AE8DB91C784E579DDED061E8`.
+  `0C42C7DBC746F2C98FD00D2F05EDDC14C9966B48B2DCE73B2AAC73BA87945477`.
 
 These values come from a full rebuild. Physical-board acceptance is still
 required.

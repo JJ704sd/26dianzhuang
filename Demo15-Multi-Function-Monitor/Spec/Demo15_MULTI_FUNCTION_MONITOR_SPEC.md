@@ -13,7 +13,8 @@ analysis extension without modifying Demo12, Demo13 or Demo14.
 - Sample PA3 at 20 kSa/s through circular DMA and retain an 800-sample fast
   history.
 - Offer free-run, rising-trigger and falling-trigger views from 2 ms through
-  40 ms.
+  5 s. Use the 20 kSa/s history for 2-40 ms and a packed 250 Sa/s history for
+  1-5 s so low-frequency waveforms fit within the 8 KB SRAM budget.
 - Show input peak-to-peak voltage and input frequency.
 - Retain PA2 PWM enable, frequency and duty controls, and PA6 frequency capture.
 
@@ -31,6 +32,12 @@ analysis extension without modifying Demo12, Demo13 or Demo14.
   `CLIPPED` quality.
 - Show the HESS startup screen at boot and share the ECG waveform/timebase with
   ECG monitor mode instead of allocating a second history buffer.
+
+### SpO2 status
+
+- SpO2 acquisition and display are not implemented because no blood-oxygen
+  sensor, interface pins or validated algorithm are defined in the source
+  projects. Do not display placeholder measurements as real SpO2 data.
 
 ## Mode and naming contract
 
@@ -58,7 +65,8 @@ analysis extension without modifying Demo12, Demo13 or Demo14.
    splash modules and emits the correctly named HEX file.
 4. Flash the board, hold SW2 repeatedly and verify the three-mode cycle.
 5. In oscilloscope mode, check PA3 waveform/Vpp, PA6 frequency, PA2 PWM and all
-   timebases with safe sine and square inputs.
+   timebases with safe sine and square inputs. Check a 1 Hz waveform at 2-5 s,
+   and a 1 kHz waveform at 2-4 ms.
 6. In ECG and HESS modes, use an isolated safe ECG source and check waveform,
    BPM, RR, RMSSD, quality, timebase and run/hold behavior.
 

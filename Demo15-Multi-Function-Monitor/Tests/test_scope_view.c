@@ -27,6 +27,8 @@ int main(void)
     scope_view_info_t info;
     uint16_t i;
     uint8_t differs = 0U;
+    uint8_t slow_history[250];
+    uint16_t slow_output[120];
 
     make_square(history, 200U, 0U);
     make_square(shifted, 200U, 5U);
@@ -46,6 +48,45 @@ int main(void)
     CHECK(ScopeView_CopyWindow(shifted, 200U, 200U, 0U, 200U, 0U,
                                SCOPE_VIEW_RISING, trig_b, 100U, &info) == 100U);
     for (i = 0U; i < 100U; ++i) { CHECK(trig_a[i] == trig_b[i]); }
+
+    /* One second of packed 250 Sa/s history must retain a full 1 Hz wave.
+     * Values 64 and 192 represent 12-bit ADC counts 1024 and 3072.
+     */
+    for (i = 0U; i < 250U; ++i)
+    {
+        slow_history[i] = (i < 125U) ? 64U : 192U;
+    }
+    CHECK(ScopeView_CopyPacked12Window(slow_history, 250U, 250U, 0U,
+                                       250U, 0U, SCOPE_VIEW_FREE,
+                                       slow_output, 120U, &info) == 120U);
+    CHECK(info.source_count == 250U);
+    CHECK(info.minimum == 1024U);
+    CHECK(info.maximum == 3072U);
+    CHECK(slow_output[0] == 1024U);
+    CHECK(slow_output[119] == 3072U);
+
+    for (i = 0U; i < 250U; ++i) { slow_history[i] = (uint8_t)i; }
+    CHECK(ScopeView_CopyPacked12Window(slow_history, 250U, 250U, 0U,
+                                       250U, 0U, SCOPE_VIEW_FREE,
+                                       slow_output, 120U, &info) == 120U);
+    CHECK(slow_output[0] == 0U);
+    CHECK(slow_output[119] == 3984U);
+
+    {
+        uint8_t wrapped_history[1250];
+        for (i = 0U; i < 1250U; ++i)
+        {
+            wrapped_history[(uint16_t)((100U + i) % 1250U)] =
+                (i < 625U) ? 64U : 192U;
+        }
+        CHECK(ScopeView_CopyPacked12Window(wrapped_history, 1250U, 1250U,
+                                           100U, 1250U, 0U,
+                                           SCOPE_VIEW_RISING, slow_output,
+                                           120U, &info) == 120U);
+        CHECK(info.trigger_found != 0U);
+        CHECK(info.minimum == 1024U);
+        CHECK(info.maximum == 3072U);
+    }
 
     puts("scope view tests passed");
     return EXIT_SUCCESS;

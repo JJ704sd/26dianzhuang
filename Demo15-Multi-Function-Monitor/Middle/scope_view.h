@@ -30,4 +30,15 @@ uint16_t ScopeView_CopyWindow(const uint16_t *history,
                               uint16_t output_capacity,
                               scope_view_info_t *info);
 
+uint16_t ScopeView_CopyPacked12Window(const uint8_t *history,
+                                      uint16_t history_size,
+                                      uint16_t history_count,
+                                      uint16_t write_index,
+                                      uint16_t span_samples,
+                                      uint16_t free_phase,
+                                      scope_view_mode_t mode,
+                                      uint16_t *output,
+                                      uint16_t output_capacity,
+                                      scope_view_info_t *info);
+
 #endif

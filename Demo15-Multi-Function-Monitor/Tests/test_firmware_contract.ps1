@@ -35,8 +35,16 @@ if (($main -notmatch 'key2_hold_period = get_pwm_period\(\)') -or
 if ($task -notmatch '#define FAST_HISTORY_SAMPLES\s+800U') {
     throw 'Fast history RAM budget changed unexpectedly'
 }
+if ($task -notmatch '#define SLOW_HISTORY_SAMPLES\s+1250U') {
+    throw 'Slow scope history must retain a five-second 250 Sa/s window'
+}
 if ($task -notmatch '#define ECG_HISTORY_SAMPLES\s+1250U') {
     throw 'ECG history must retain the full five-second window'
+}
+if (($task -notmatch '250U, 500U, 1000U, 1250U') -or
+    ($task -notmatch '"1\.0s", "2\.0s", "4\.0s", "5\.0s"') -or
+    ($task -match '"6\.0s"')) {
+    throw 'ECG timebase must not exceed its five-second history'
 }
 if ($task -match '\bAPP_MODE_(SCOPE|ECG)\b') {
     throw 'Stale two-mode identifiers remain in Demo15'
