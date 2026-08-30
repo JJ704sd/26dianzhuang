@@ -58,21 +58,23 @@ Then rebuild `Project/Demo15_Multi_Function_Monitor.uvprojx` and flash
 `Project/Objects/Demo15_Multi_Function_Monitor.hex`. Host tests and a clean
 Keil build do not replace the final on-board checks listed in the specification.
 
-See `Spec/Demo15_MULTI_FUNCTION_MONITOR_SPEC.md` for acceptance checkpoints.
+See `Spec/Demo15_MULTI_FUNCTION_MONITOR_SPEC.md` for acceptance checkpoints and
+`Spec/DEMO15_VIDEO_DERIVED_DESIGN_SPEC.md` for the video-derived rationale,
+evidence boundary and signal-generator test matrix.
 
 ## Verified build
 
 - ArmClang 6.24 with size optimization (`-Oz`).
 - Device pack: `GigaDevice.GD32E23x_DFP 1.1.0`.
 - Result: `0 Error(s), 0 Warning(s)`.
-- Program size: Code 17094 B, RO data 6550 B.
+- Program size: Code 17318 B, RO data 6550 B.
 - Image RAM: RW 24 B plus ZI 6472 B = 6496 B. The ZI total includes the
   configured 1536 B stack, leaving 1696 B of the 8 KB SRAM unallocated.
 - The previous call-graph estimate used at most 320 B of stack, with the usual
   caveat for indirect calls and interrupt nesting; it fits inside the reserved
   stack.
 - HEX SHA-256:
-  `0C42C7DBC746F2C98FD00D2F05EDDC14C9966B48B2DCE73B2AAC73BA87945477`.
+  `B1038CD8F3B3FFAB2B17B67D813B050F39E6770C4C4F95453033A3D9C34E78AD`.
 
 These values come from a full rebuild. Physical-board acceptance is still
 required.

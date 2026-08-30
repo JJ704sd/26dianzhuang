@@ -46,6 +46,17 @@ static volatile uint16_t key1_hold_ms;
 static volatile uint8_t range_switch_pending;
 static volatile uint8_t key1_switch_latched;
 
+static void update_status_led(void)
+{
+    if(get_pwm_state() == PWM_ON){
+        if(led_handle[led2].led_state != LED_ON){
+            led_turn_on(&led_handle[led2]);
+        }
+    }else if(led_handle[led2].led_state != LED_OFF){
+        led_turn_off(&led_handle[led2]);
+    }
+}
+
 static void mode_switch_timer_callback(void)
 {
     if(gpio_input_bit_get(KEY1_GPIO_Port, KEY1_Pin) == RESET){
@@ -101,6 +112,8 @@ int main(void)
 
     led_handle[led1] = led_init(LED1_GPIO_Port, LED1_Pin, RESET);
     led_handle[led2] = led_init(LED2_GPIO_Port, LED2_Pin, RESET);
+    led_turn_on(&led_handle[led1]);
+    led_turn_off(&led_handle[led2]);
 
     key_handle[key1] = key_init(KEY1_GPIO_Port, KEY1_Pin, RESET);
     key_handle[key2] = key_init(KEY2_GPIO_Port, KEY2_Pin, RESET);
@@ -227,6 +240,7 @@ int main(void)
             }
             ec11_handle.ec11_direction = ec11_static;
         }
+        update_status_led();
     }
 }
 

@@ -8,6 +8,7 @@
 #include "mid_lcd.h"
 #include "mid_pwm.h"
 #include "mid_timer.h"
+#include "scope_metrics.h"
 #include "scope_view.h"
 #include "signal_output.h"
 
@@ -18,6 +19,7 @@
 #define SCOPE_DISPLAY_VPP_MV     5000U
 #define SCOPE_SMALL_VPP_MV       1000U
 #define SCOPE_IDLE_SPAN_COUNTS   64U
+#define SCOPE_DUTY_MIN_SPAN_COUNTS 16U
 #define FAST_HISTORY_SAMPLES     800U
 #define FAST_DISPLAY_SAMPLES     WAVE_WIDTH
 #define SLOW_HISTORY_SAMPLES     1250U
@@ -78,6 +80,7 @@ static uint8_t osc_stop_bit = OSC_RUN;
 static uint16_t ecg_vpp_mv;
 static uint16_t scope_vpp_mv;
 static uint32_t scope_sample_frequency;
+static scope_metrics_t scope_metrics;
 
 static int32_t baseline_q8;
 static int16_t filtered_value;
@@ -546,8 +549,11 @@ static void draw_scope_wave(uint16_t span_samples, uint8_t slow_timebase)
                                  (source_available - 1U);
     }
     scope_sample_frequency = measure_sample_frequency(fast_display_samples, available,
-                                                       min_value, max_value,
-                                                       display_sample_rate_hz);
+                                                      min_value, max_value,
+                                                      display_sample_rate_hz);
+    scope_metrics = ScopeMetrics_Analyze(fast_display_samples, available,
+                                         min_value, max_value,
+                                         SCOPE_DUTY_MIN_SPAN_COUNTS);
 
     draw_wave_grid();
     for(point = 0U; point < available; point++){
@@ -668,8 +674,6 @@ static void scope_show_ui(void)
     char show_data[12];
     uint32_t input_frequency = get_freq_value();
     uint32_t output_frequency = get_pwm_out_freq();
-    uint16_t duty = (uint16_t)(((uint32_t)get_pwm_duty() * 100U) /
-                               get_pwm_period());
 
     if(input_frequency == 0U){
         input_frequency = scope_sample_frequency;
@@ -722,7 +726,13 @@ static void scope_show_ui(void)
     TFT_Fill(58U, 112U, 110U, 128U, BLACK);
     TFT_ShowString(58U, 112U, (const uint8_t *)show_data, CYAN, BLACK, 16U, 0U);
 
-    sprintf(show_data, "%3u%%", (unsigned int)duty);
+    if(scope_metrics.valid != 0U){
+        sprintf(show_data, "%3u%%",
+                (unsigned int)scope_metrics.input_duty_percent);
+    }else{
+        sprintf(show_data, "---%%");
+    }
+    TFT_Fill(128U, 112U, 160U, 128U, BLACK);
     TFT_ShowString(128U, 112U, (const uint8_t *)show_data, YELLOW, BLACK, 16U, 0U);
 }
 
@@ -740,7 +750,7 @@ static void scope_static_ui(void)
     TFT_ShowString(128U, 50U, (const uint8_t *)"FOUT", WHITE, BLACK, 16U, 0U);
     TFT_ShowString(2U, 96U, (const uint8_t *)"Vpp", WHITE, BLACK, 16U, 0U);
     TFT_ShowString(58U, 96U, (const uint8_t *)"FIN", WHITE, BLACK, 16U, 0U);
-    TFT_ShowString(128U, 96U, (const uint8_t *)"DUTY", WHITE, BLACK, 16U, 0U);
+    TFT_ShowString(128U, 96U, (const uint8_t *)"DIN", WHITE, BLACK, 16U, 0U);
 
     draw_wave_grid();
     scope_show_ui();

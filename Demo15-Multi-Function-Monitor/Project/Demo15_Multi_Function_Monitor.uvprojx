@@ -600,6 +600,11 @@
               <FilePath>..\Middle\scope_view.c</FilePath>
             </File>
             <File>
+              <FileName>scope_metrics.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Middle\scope_metrics.c</FilePath>
+            </File>
+            <File>
               <FileName>ecg_acq_core.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Middle\ecg_acq_core.c</FilePath>

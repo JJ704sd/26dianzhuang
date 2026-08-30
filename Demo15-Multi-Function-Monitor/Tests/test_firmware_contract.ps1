@@ -18,7 +18,7 @@ if ($projectText -notmatch 'GigaDevice\.GD32E23x_DFP\.1\.1\.0') {
 if ($projectText -notmatch '-Oz') {
     throw 'Demo15 must optimize for the Community linker image limit'
 }
-foreach ($source in 'scope_view.c','ecg_acq_core.c','hess_analyzer.c','hess_splash.c') {
+foreach ($source in 'scope_view.c','scope_metrics.c','ecg_acq_core.c','hess_analyzer.c','hess_splash.c') {
     if ($projectText -notmatch [regex]::Escape($source)) {
         throw "Project does not link $source"
     }
@@ -28,6 +28,10 @@ foreach ($mode in 'DEMO15_MODE_OSCILLOSCOPE','DEMO15_MODE_ECG_MONITOR','DEMO15_M
 }
 if ($main -notmatch 'HESS_Splash_Show\(\)') { throw 'HESS splash is not started' }
 if ($main -notmatch 'Demo15_SelectNextMode\(\)') { throw 'Three-mode selector is not wired' }
+if (($main -notmatch 'led_turn_on\(&led_handle\[led1\]\)') -or
+    ($main -notmatch 'update_status_led\(\)')) {
+    throw 'Power/alive and PWM status LED feedback is not wired'
+}
 if (($main -notmatch 'key2_hold_period = get_pwm_period\(\)') -or
     ($main -notmatch 'set_pwm_period\(key2_hold_period\)')) {
     throw 'SW2 long press does not suppress the PWM short-press side effect'
@@ -48,6 +52,10 @@ if (($task -notmatch '250U, 500U, 1000U, 1250U') -or
 }
 if ($task -match '\bAPP_MODE_(SCOPE|ECG)\b') {
     throw 'Stale two-mode identifiers remain in Demo15'
+}
+if (($task -notmatch 'ScopeMetrics_Analyze\(') -or
+    ($task -notmatch '\(const uint8_t \*\)"DIN"')) {
+    throw 'Input duty measurement is not connected to the scope UI'
 }
 
 Write-Host 'Demo15 firmware contract passed.'
