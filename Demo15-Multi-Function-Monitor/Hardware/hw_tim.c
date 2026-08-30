@@ -83,7 +83,7 @@ void mx_tim2_init(void)
     rcu_periph_clock_enable(RCU_GPIOA);
     rcu_periph_clock_enable(RCU_TIMER2);
 
-    gpio_mode_set(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO_PIN_6);
+    gpio_mode_set(GPIOA, GPIO_MODE_AF, GPIO_PUPD_PULLDOWN, GPIO_PIN_6);
     gpio_output_options_set(GPIOA, GPIO_OTYPE_PP, GPIO_OSPEED_50MHZ, GPIO_PIN_6);
     gpio_af_set(GPIOA, GPIO_AF_1, GPIO_PIN_6);
 
@@ -101,7 +101,7 @@ void mx_tim2_init(void)
     timer_icinitpara.icpolarity = TIMER_IC_POLARITY_RISING;
     timer_icinitpara.icselection = TIMER_IC_SELECTION_DIRECTTI;
     timer_icinitpara.icprescaler = TIMER_IC_PSC_DIV1;
-    timer_icinitpara.icfilter = 0x00U;
+    timer_icinitpara.icfilter = 0x03U;
     timer_input_capture_config(TIMER2, TIMER_CH_0, &timer_icinitpara);
 
     timer_auto_reload_shadow_enable(TIMER2);

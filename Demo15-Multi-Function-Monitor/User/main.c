@@ -16,9 +16,11 @@
 #include "mid_pwm.h"
 #include "mid_timer.h"
 #include "osc_task.h"
+#include "signal_output.h"
 
 #define MODE_SWITCH_HOLD_MS 2000U
 #define RANGE_SWITCH_HOLD_MS 2000U
+#define ECG_VIEW_HOLD_MS     2000U
 
 enum led_instance
 {
@@ -40,11 +42,19 @@ static struct ec11_class ec11_handle;
 static volatile uint16_t key2_hold_ms;
 static volatile uint16_t key2_hold_period;
 static volatile uint16_t key2_hold_duty;
+static volatile uint8_t key2_hold_raw_output;
 static volatile uint8_t mode_switch_pending;
 static volatile uint8_t key2_switch_latched;
 static volatile uint16_t key1_hold_ms;
 static volatile uint8_t range_switch_pending;
 static volatile uint8_t key1_switch_latched;
+static volatile uint16_t key3_hold_ms;
+static volatile uint16_t key3_hold_period;
+static volatile uint16_t key3_hold_duty;
+static volatile uint16_t key3_hold_bpm;
+static volatile uint8_t key3_hold_ecg_view;
+static volatile uint8_t ecg_view_switch_pending;
+static volatile uint8_t key3_switch_latched;
 
 static void update_status_led(void)
 {
@@ -59,11 +69,15 @@ static void update_status_led(void)
 
 static void mode_switch_timer_callback(void)
 {
+    SignalOutput_Tick1ms();
+
     if(gpio_input_bit_get(KEY1_GPIO_Port, KEY1_Pin) == RESET){
         if(key1_hold_ms < RANGE_SWITCH_HOLD_MS){
             key1_hold_ms++;
         }
         if((key1_hold_ms >= RANGE_SWITCH_HOLD_MS) &&
+           (Demo15_GetMode() == DEMO15_MODE_OSCILLOSCOPE) &&
+           (Demo15_IsScopeEcgView() == 0U) &&
            (key1_switch_latched == 0U)){
             range_switch_pending = 1U;
             key1_switch_latched = 1U;
@@ -77,6 +91,10 @@ static void mode_switch_timer_callback(void)
         if(key2_hold_ms == 0U){
             key2_hold_period = get_pwm_period();
             key2_hold_duty = get_pwm_duty();
+            key2_hold_raw_output =
+                (uint8_t)((Demo15_GetMode() != DEMO15_MODE_ECG_MONITOR) &&
+                          !((Demo15_GetMode() == DEMO15_MODE_OSCILLOSCOPE) &&
+                            (Demo15_IsScopeEcgView() != 0U)));
         }
         if(key2_hold_ms < MODE_SWITCH_HOLD_MS){
             key2_hold_ms++;
@@ -89,6 +107,27 @@ static void mode_switch_timer_callback(void)
     }else{
         key2_hold_ms = 0U;
         key2_switch_latched = 0U;
+    }
+
+    if(gpio_input_bit_get(KEY3_GPIO_Port, KEY3_Pin) == RESET){
+        if(key3_hold_ms == 0U){
+            key3_hold_period = get_pwm_period();
+            key3_hold_duty = get_pwm_duty();
+            key3_hold_bpm = SignalOutput_GetValue();
+            key3_hold_ecg_view = Demo15_IsScopeEcgView();
+        }
+        if(key3_hold_ms < ECG_VIEW_HOLD_MS){
+            key3_hold_ms++;
+        }
+        if((key3_hold_ms >= ECG_VIEW_HOLD_MS) &&
+           (Demo15_GetMode() == DEMO15_MODE_OSCILLOSCOPE) &&
+           (key3_switch_latched == 0U)){
+            ecg_view_switch_pending = 1U;
+            key3_switch_latched = 1U;
+        }
+    }else{
+        key3_hold_ms = 0U;
+        key3_switch_latched = 0U;
     }
 }
 
@@ -125,6 +164,7 @@ int main(void)
     Set_ADC_Channel(ADC_CHANNEL_17);
     adc_vref_value = Get_ADC_Average(200U);
 
+    SignalOutput_Init();
     set_pwm_period(1000U);
     set_pwm_duty(500U);
     set_pwm_state(PWM_ON);
@@ -153,11 +193,13 @@ int main(void)
             __disable_irq();
             mode_switch_pending = 0U;
             __enable_irq();
-            Demo15_SelectNextMode();
             /* A short press may already have been reported while the key was
              * held. Restore the PWM values captured at the press edge. */
-            set_pwm_period(key2_hold_period);
-            set_pwm_duty(key2_hold_duty);
+            if(key2_hold_raw_output != 0U){
+                set_pwm_period(key2_hold_period);
+                set_pwm_duty(key2_hold_duty);
+            }
+            Demo15_SelectNextMode();
             key_handle[key2].key_state = KEY_NoPress;
         }
 
@@ -168,14 +210,28 @@ int main(void)
             if(Demo15_GetMode() == DEMO15_MODE_OSCILLOSCOPE){
                 toggle_scope_small_signal();
             }
-            /* KEY1 also reported a short press at 20ms; undo that change
-             * because this press was ultimately used as a long press. */
+            /* Undo the PWM short-press side effect because this press was
+             * ultimately used to cycle the scope vertical range. */
             if(get_pwm_state() == PWM_ON){
                 set_pwm_state(PWM_OFF);
             }else{
                 set_pwm_state(PWM_ON);
             }
             key_handle[key1].key_state = KEY_NoPress;
+        }
+
+        if(ecg_view_switch_pending != 0U){
+            __disable_irq();
+            ecg_view_switch_pending = 0U;
+            if(key3_hold_ecg_view != 0U){
+                SignalOutput_SetEcgBpm(key3_hold_bpm);
+            }else{
+                set_pwm_period(key3_hold_period);
+                set_pwm_duty(key3_hold_duty);
+            }
+            __enable_irq();
+            toggle_scope_ecg_view();
+            key_handle[key3].key_state = KEY_NoPress;
         }
 
         if(key_timer_value >= 10U){
@@ -217,7 +273,8 @@ int main(void)
         }
 
         if(ec11_handle.ec11_direction != ec11_static){
-            if(Demo15_GetMode() != DEMO15_MODE_OSCILLOSCOPE){
+            if((Demo15_GetMode() != DEMO15_MODE_OSCILLOSCOPE) ||
+               (Demo15_IsScopeEcgView() != 0U)){
                 timebase_index = get_ecg_timebase_index();
                 if(ec11_handle.ec11_direction == ec11_forward){
                     if(timebase_index > 0U){

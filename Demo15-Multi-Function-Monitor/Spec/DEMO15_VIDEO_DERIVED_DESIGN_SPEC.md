@@ -54,8 +54,9 @@ Timestamps identify regions of interest rather than frame-accurate test steps.
   timebases.
 - Display the input waveform with a fixed vertical scale and compensate the
   inverting analog front end.
-- Preserve the raw fast-history envelope with chronological min/max peak
-  detection when the source window exceeds the 120-pixel display width.
+- Use uniformly spaced chronological samples for ordinary fast-scope pages.
+  Preserve the raw fast-history envelope with chronological min/max peak
+  detection only in the dedicated 200 mVpp `NOISE` page.
 - Gate the first scope waveform behind a visible 500 ms `WAIT` state so raw
   peak detection does not preserve power-on transients as normal signal data.
 - Display input Vpp, input frequency and input duty (`DIN`).
@@ -66,6 +67,10 @@ Timestamps identify regions of interest rather than frame-accurate test steps.
   fabricated duty value.
 - Retain the PA2 PWM output controls and show its on/off and output-frequency
   state separately from input measurements.
+- Animate free-run by selecting adjacent continuous history windows. Never
+  rotate samples inside a window or connect its newest end to its oldest end.
+  If the history has no spare samples beyond the displayed span, show the
+  newest continuous window without artificial movement.
 
 The video also exposes Vmax, Vmin, average and RMS-style values.  These are a
 planned measurement-panel extension, not part of this minimal change: adding
@@ -76,10 +81,15 @@ and 8 KB SRAM budgets.
 
 - Decimate the shared acquisition stream to 250 Hz and keep five seconds of
   display history.
-- ECG mode displays waveform, BPM, signal validity, run/hold and timebase.
-- Simulated SpO2 mode displays the generated PPG-like waveform, BPM, Vpp and
-  signal state and is permanently marked `SIM/PPG`.
+- ECG mode generates a 60/80 BPM PWM-DAC envelope, then displays the genuinely
+  recaptured PA3 waveform, measured BPM, signal validity, run/hold and timebase.
+- Simulated SpO2 mode displays the received waveform, BPM, Vpp and signal state
+  and is permanently marked `SIM` plus `DUT` or `2CH`.
 - Heart-rate values time out when no valid peak remains current.
+- Draw ECG/PPG incrementally with a fixed left-to-right column cursor and a
+  per-column min/max envelope. Normal samples may update only the active plot
+  column; the numeric side and bottom fields change only when their displayed
+  value changes. Wrapping must not connect the right and left plot edges.
 - These modes must consume genuine PA3 samples. Synthetic screen graphics or
   placeholder medical values are not acceptance evidence.
 
@@ -93,21 +103,22 @@ and 8 KB SRAM budgets.
 
 ### 4.4 SpO2 boundary
 
-The third mode displays a DG1032Z-generated analog PPG-like signal, not optical
-sensor data. It must not display a placeholder saturation percentage as a real
-measurement.
+The third mode defaults to an explicit CH1 square-wave protocol in which duty
+maps linearly to the 70-100% teaching display range. Tagged RED/IR input may use
+the ratio-of-ratios path. Both are simulation estimates, not clinical results.
 
 ## 5. Control contract
 
-| Control | Scope mode | ECG/SpO2 mode |
-| --- | --- | --- |
-| SW1 short | Toggle PA2 PWM output | Toggle PA2 PWM output |
-| SW1 hold 2 s | Toggle 1 Vpp / 5 Vpp scope range without retaining the short-press side effect | No range change |
-| SW2 short | Adjust PWM frequency | Adjust PWM frequency |
-| SW2 hold 2 s | Cycle Scope -> ECG -> SpO2 without retaining the short-press side effect | Same |
-| SW3 short | Adjust PWM duty | Adjust PWM duty |
-| Encoder rotate | Change scope timebase | Change ECG/SpO2 timebase |
-| Encoder press | Run/hold | Run/hold |
+| Control | Scope general | Scope `S-ECG` / ECG mode | SpO2 mode |
+| --- | --- | --- | --- |
+| SW1 short | Toggle raw PA2 PWM | Toggle ECG PWM-DAC output | Toggle raw PA2 PWM |
+| SW1 hold 2 s | Cycle 5 Vpp / 1 Vpp / 200 mVpp without retaining the short action | No range change | No range change |
+| SW2 short | Adjust raw PWM frequency | No action | Adjust raw PWM frequency |
+| SW2 hold 2 s | Cycle Scope -> ECG -> SpO2 without retaining the short action | Same | Same |
+| SW3 short | Adjust raw PWM duty | Toggle 60/80 BPM | Adjust raw PWM duty |
+| SW3 hold 2 s | Toggle Scope general / `S-ECG` without retaining the short action | Return to Scope general when already in `S-ECG`; no special action in ECG mode | No special action |
+| Encoder rotate | Change scope timebase | Change ECG timebase | Change PPG timebase |
+| Encoder press | Run/hold | Run/hold | Run/hold |
 
 ## 6. Acceptance matrix
 
@@ -120,8 +131,9 @@ validated analog-front-end range. PA3 itself must never be driven outside
 | Fast sine | 1 kHz, safe 2 Vpp input, 2-4 ms timebase | Several stable cycles; Vpp and frequency agree within hardware calibration tolerance. |
 | Square duty | 1 kHz square/pulse at 25%, 50% and 75% duty | Shape changes visibly; `DIN` follows the configured duty and is not confused with PWM output duty. |
 | Low-frequency sine | 1 Hz, 2-5 s timebase | At least one complete cycle is visible without the former nearly-flat fast-window appearance. |
-| Cardiac stimulus | Safe isolated cardiac/ECG simulator, 2-5 s timebase | ECG trace is recognizable; BPM becomes valid only after qualified peaks. |
-| Simulated PPG | DG1032Z CH1, High Z, 1.2 Hz sine, 1.0 Vpp, +1.0 V offset | `SpO2 SIM/PPG` page shows a stable trace near 72 BPM without a fabricated saturation percentage. |
+| Self-generated ECG | PA2 through verified low-pass to PA3, common ground; select 60 then 80 BPM | ECG trace is recognizable; measured BPM becomes valid only after qualified peaks and approaches the selected target. |
+| Scope ECG bridge | Hold SW3 in Scope with the ECG loopback connected | `S-ECG` reuses the incremental sweep trace; returning preserves normal scope settings. |
+| Simulated PPG | CH1 square at exactly 1 or 2 Hz and 25/50/75% duty, or PA3 RED/IR plus PA6 tag | `SIM/DUT` shows 78/85/93%; `SIM/2CH` shows the ratio-derived percentage. |
 | Run/hold | Any stable waveform | Hold freezes the captured view and status reads `HOLD`; resume returns to `RUN`. |
 | Output feedback | Toggle SW1 | LCD `OUT` and LED2 change together; PA2 output state matches both. |
 | Mode cycle | Hold SW2 repeatedly | Scope, ECG and SpO2 cycle in order; PWM frequency is restored after the long press. |
@@ -140,6 +152,7 @@ table above remains the required hardware acceptance record.
 | Visible output-state feedback | LCD `OUT` plus LED2 mirror | Implemented in this change |
 | Firmware-alive indication | LED1 on after initialization | Implemented in this change |
 | ECG/SpO2 pages backed by acquired samples | Shared 250 Hz history and pulse core | Implemented; hardware validation pending |
+| PWM-generated ECG and scope bridge | 16.95 kHz phase-walking PA2 PWM envelope, 60/80 presets, direct board-front-end loopback, explicit `S-ECG` subview | Implemented; loopback/board validation pending |
 | Vmax/Vmin/Vavg/Vrms panel | No current UI allocation | Planned |
 | Simulated PPG waveform | DG1032Z CH1 through existing PA3 path | Implemented; hardware validation pending |
-| SpO2 percentage | Single-channel generator signal has no red/IR ratio | Intentionally not displayed |
+| Simulated SpO2 percentage | `spo2_receiver.c` pre-reconstruction ADC-code duty window plus optional `spo2_core.c` RED/IR ratio | DUT and 2CH teaching estimates implemented; physical validation pending |

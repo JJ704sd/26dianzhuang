@@ -37,6 +37,8 @@ void toggle_scope_small_signal(void);
 uint8_t get_scope_small_signal(void);
 void cycle_scope_view_mode(void);
 scope_view_mode_t get_scope_view_mode(void);
+void toggle_scope_ecg_view(void);
+uint8_t Demo15_IsScopeEcgView(void);
 void set_osc_stop_bit(uint8_t value);
 uint8_t get_osc_stop_bit(void);
 

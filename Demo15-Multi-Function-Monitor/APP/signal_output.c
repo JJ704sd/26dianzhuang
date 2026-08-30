@@ -2,11 +2,16 @@
 
 #include "mid_pwm.h"
 
-#define PWM_CLOCK_HZ       1000000UL
-#define ENVELOPE_PERIOD    50U
+#define PWM_CLOCK_HZ             1000000UL
+#define PWM_DAC_PERIOD_TICKS     59U
+#define PWM_DAC_DUTY_MIN_TICKS   6U
+#define PWM_DAC_DUTY_MAX_TICKS   53U
+#define ECG_PRESET_COUNT         2U
 
 static const uint16_t square_hz[] = {500U, 1000U, 2000U};
 static const uint16_t sine_hz[] = {50U, 100U, 200U};
+static const uint16_t ecg_bpm_presets[ECG_PRESET_COUNT] = {60U, 80U};
+static const uint16_t ecg_period_ms[ECG_PRESET_COUNT] = {1000U, 750U};
 static const uint8_t sine_lut[32] =
 {
     128U,153U,177U,199U,218U,234U,245U,253U,
@@ -15,13 +20,13 @@ static const uint8_t sine_lut[32] =
     0U,3U,11U,22U,38U,57U,79U,103U
 };
 
-static signal_output_mode_t mode;
-static uint8_t enabled;
+static volatile signal_output_mode_t mode;
+static volatile uint8_t enabled;
 static uint8_t square_index;
 static uint8_t sine_index;
-static uint16_t ecg_bpm;
+static volatile uint8_t ecg_preset_index;
 static uint32_t sine_phase_milli;
-static uint16_t ecg_phase_ms;
+static volatile uint16_t ecg_phase_ms;
 
 static uint16_t ecg_duty(uint16_t phase_ms, uint16_t period_ms)
 {
@@ -58,7 +63,10 @@ static uint16_t ecg_duty(uint16_t phase_ms, uint16_t period_ms)
     }
     if (value < -500) { value = -500; }
     if (value > 500) { value = 500; }
-    return (uint16_t)(5 + (((int32_t)value + 500) * 40) / 1000);
+    return (uint16_t)(PWM_DAC_DUTY_MIN_TICKS +
+                      (((int32_t)value + 500) *
+                       (PWM_DAC_DUTY_MAX_TICKS - PWM_DAC_DUTY_MIN_TICKS)) /
+                      1000);
 }
 
 static void apply_mode(void)
@@ -74,8 +82,12 @@ static void apply_mode(void)
     }
     else
     {
-        set_pwm_period(ENVELOPE_PERIOD);
-        set_pwm_duty(ENVELOPE_PERIOD / 2U);
+        /* TIMER0 samples the ADC every 50 us. A 50-tick PWM carrier would be
+         * phase-locked to that sampling interval, so averaging would see one
+         * carrier phase instead of its duty. 59 is coprime with 50 and makes
+         * the 80-conversion ECG decimator cover the complete PWM phase set. */
+        set_pwm_period(PWM_DAC_PERIOD_TICKS);
+        set_pwm_duty(PWM_DAC_PERIOD_TICKS / 2U);
     }
     if (enabled != 0U) { set_pwm_state(PWM_ON); }
 }
@@ -86,7 +98,7 @@ void SignalOutput_Init(void)
     enabled = 0U;
     square_index = 1U;
     sine_index = 1U;
-    ecg_bpm = 72U;
+    ecg_preset_index = 0U;
     apply_mode();
 }
 
@@ -99,11 +111,15 @@ void SignalOutput_Tick1ms(void)
         sine_phase_milli += (uint32_t)sine_hz[sine_index] * 32U;
         if (sine_phase_milli >= 32000U) { sine_phase_milli -= 32000U; }
         index = (uint8_t)(sine_phase_milli / 1000U);
-        set_pwm_duty((uint16_t)(5U + ((uint16_t)sine_lut[index] * 40U) / 255U));
+        set_pwm_duty((uint16_t)(PWM_DAC_DUTY_MIN_TICKS +
+                     ((uint16_t)sine_lut[index] *
+                      (PWM_DAC_DUTY_MAX_TICKS - PWM_DAC_DUTY_MIN_TICKS)) /
+                     255U));
     }
     else
     {
-        const uint16_t period_ms = (uint16_t)(60000U / ecg_bpm);
+        const uint8_t preset = ecg_preset_index;
+        const uint16_t period_ms = ecg_period_ms[preset];
         set_pwm_duty(ecg_duty(ecg_phase_ms, period_ms));
         ecg_phase_ms++;
         if (ecg_phase_ms >= period_ms) { ecg_phase_ms = 0U; }
@@ -136,15 +152,38 @@ void SignalOutput_Adjust(int8_t direction)
         sine_index = (direction > 0) ? (uint8_t)((sine_index + 1U) % 3U) :
                      ((sine_index == 0U) ? 2U : (uint8_t)(sine_index - 1U));
     }
-    else if (direction > 0)
-    {
-        ecg_bpm = (ecg_bpm >= 120U) ? 60U : (uint16_t)(ecg_bpm + 6U);
-    }
     else
     {
-        ecg_bpm = (ecg_bpm <= 60U) ? 120U : (uint16_t)(ecg_bpm - 6U);
+        (void)direction;
+        ecg_preset_index = (uint8_t)(1U - ecg_preset_index);
     }
     apply_mode();
+}
+
+void SignalOutput_SelectEcg(void)
+{
+    mode = SIGNAL_OUTPUT_ECG;
+    apply_mode();
+}
+
+void SignalOutput_ToggleEcgPreset(void)
+{
+    ecg_preset_index = (uint8_t)(1U - ecg_preset_index);
+    ecg_phase_ms = 0U;
+    if (mode == SIGNAL_OUTPUT_ECG)
+    {
+        apply_mode();
+    }
+}
+
+void SignalOutput_SetEcgBpm(uint16_t bpm)
+{
+    ecg_preset_index = (bpm == 80U) ? 1U : 0U;
+    ecg_phase_ms = 0U;
+    if (mode == SIGNAL_OUTPUT_ECG)
+    {
+        apply_mode();
+    }
 }
 
 signal_output_mode_t SignalOutput_GetMode(void) { return mode; }
@@ -153,7 +192,11 @@ uint16_t SignalOutput_GetValue(void)
 {
     if (mode == SIGNAL_OUTPUT_SQUARE) { return square_hz[square_index]; }
     if (mode == SIGNAL_OUTPUT_SINE) { return sine_hz[sine_index]; }
-    return ecg_bpm;
+    return ecg_bpm_presets[ecg_preset_index];
+}
+uint16_t SignalOutput_GetEcgPeriodMs(void)
+{
+    return ecg_period_ms[ecg_preset_index];
 }
 const char *SignalOutput_GetModeText(void)
 {

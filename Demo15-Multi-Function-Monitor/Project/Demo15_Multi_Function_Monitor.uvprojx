@@ -600,6 +600,11 @@
               <FilePath>..\Middle\scope_view.c</FilePath>
             </File>
             <File>
+              <FileName>vital_trace.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Middle\vital_trace.c</FilePath>
+            </File>
+            <File>
               <FileName>scope_metrics.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Middle\scope_metrics.c</FilePath>
@@ -608,6 +613,16 @@
               <FileName>ecg_acq_core.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Middle\ecg_acq_core.c</FilePath>
+            </File>
+            <File>
+              <FileName>spo2_core.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Middle\spo2_core.c</FilePath>
+            </File>
+            <File>
+              <FileName>spo2_receiver.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Middle\spo2_receiver.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -618,6 +633,11 @@
               <FileName>osc_task.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\APP\osc_task.c</FilePath>
+            </File>
+            <File>
+              <FileName>signal_output.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\APP\signal_output.c</FilePath>
             </File>
             <File>
               <FileName>hess_analyzer.c</FileName>
