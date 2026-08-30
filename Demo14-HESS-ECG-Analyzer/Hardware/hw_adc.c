@@ -15,7 +15,7 @@ void mx_adc_init(void)
 	//引脚配置，PA3，模拟输入，无上下拉
 	gpio_mode_set(GPIOA, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIO_PIN_3);
 	
-	//由TIMER0以40kSa/s定时触发，避免自由运行采样率不可控
+	//由TIMER0以250Sa/s定时触发，匹配ECG采集与显示时间窗
 	adc_special_function_config(ADC_CONTINUOUS_MODE, DISABLE);
 
 	//ADC扫描功能失能，这里仅一个通道
@@ -47,59 +47,4 @@ void mx_adc_init(void)
 	//使能校准和复位
 	adc_calibration_enable();
 	
-	//DMA模式使能
-	adc_dma_mode_enable();
-	
-}
-
-void mx_adc_dma_init(uint32_t adc_value,uint32_t number)
-{
-    rcu_periph_clock_enable(RCU_DMA);	//DMA时钟使能
-    
-    dma_parameter_struct dma_data_parameter;	//DMA参数结构体
-    
-    nvic_irq_enable(DMA_Channel0_IRQn, 0U);	//使能DMA中断
-    
-    dma_deinit(DMA_CH0);	//通道0复位
-    
-    dma_data_parameter.periph_addr  = (uint32_t)(&ADC_RDATA);       //外设基地址
-    dma_data_parameter.periph_inc   = DMA_PERIPH_INCREASE_DISABLE;  //外设地址不自增
-    dma_data_parameter.memory_addr  = (uint32_t)(adc_value);       //内存地址
-    dma_data_parameter.memory_inc   = DMA_MEMORY_INCREASE_ENABLE;   //内存地址自增
-    dma_data_parameter.periph_width = DMA_PERIPHERAL_WIDTH_16BIT;   //外设位宽
-    dma_data_parameter.memory_width = DMA_MEMORY_WIDTH_16BIT;       //内存位宽
-    dma_data_parameter.direction    = DMA_PERIPHERAL_TO_MEMORY;     //外设到内存
-    dma_data_parameter.number       = number;                				//数量
-    dma_data_parameter.priority     = DMA_PRIORITY_HIGH;            //高优先级
-    
-    dma_init(DMA_CH0, &dma_data_parameter);                         //DMA通道0初始化
-    
-    dma_circulation_disable(DMA_CH0);                              	//单帧采集，避免下一轮覆盖帧首
-    
-    dma_channel_enable(DMA_CH0);                                    //DMA通道0使能
-    
-    dma_interrupt_enable(DMA_CH0, DMA_CHXCTL_FTFIE);								//使能DMA传输完成中断
-}
-
-void mx_adc_scope_dma_init(uint32_t adc_value, uint32_t number)
-{
-    dma_parameter_struct dma_data_parameter;
-
-    rcu_periph_clock_enable(RCU_DMA);
-    nvic_irq_enable(DMA_Channel0_IRQn, 0U);
-    dma_deinit(DMA_CH0);
-    dma_data_parameter.periph_addr  = (uint32_t)(&ADC_RDATA);
-    dma_data_parameter.periph_inc   = DMA_PERIPH_INCREASE_DISABLE;
-    dma_data_parameter.memory_addr  = adc_value;
-    dma_data_parameter.memory_inc   = DMA_MEMORY_INCREASE_ENABLE;
-    dma_data_parameter.periph_width = DMA_PERIPHERAL_WIDTH_16BIT;
-    dma_data_parameter.memory_width = DMA_MEMORY_WIDTH_16BIT;
-    dma_data_parameter.direction    = DMA_PERIPHERAL_TO_MEMORY;
-    dma_data_parameter.number       = number;
-    dma_data_parameter.priority     = DMA_PRIORITY_ULTRA_HIGH;
-    dma_init(DMA_CH0, &dma_data_parameter);
-    dma_circulation_enable(DMA_CH0);
-    dma_memory_to_memory_disable(DMA_CH0);
-    dma_interrupt_enable(DMA_CH0, DMA_CHXCTL_HTFIE | DMA_CHXCTL_FTFIE);
-    dma_channel_enable(DMA_CH0);
 }

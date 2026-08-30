@@ -125,11 +125,9 @@ static void test_dynamic_refresh_has_bounded_spi_work(void)
     view.quality = ECG_SIGNAL_GOOD;
     view.running = 1U;
     view.gain = 1U;
-    view.window_seconds = 5U;
-    view.timebase_ms = 5U;
+    view.window_seconds = 2U;
     view.fit_limited = 1U;
-    view.wave_frame_ready = 1U;
-    view.wave_span = 0U;
+    view.waveform_revision = 1U;
     make_plot(plot, (uint16_t)(sizeof(plot) / sizeof(plot[0])),
               ECG_WAVE_PLOT_CENTER_Y);
 
@@ -140,19 +138,12 @@ static void test_dynamic_refresh_has_bounded_spi_work(void)
     ECGMonitorUI_Render(&view, plot,
                         (uint16_t)(sizeof(plot) / sizeof(plot[0])));
     first_fill = fill_pixels;
-    CHECK(strstr(last_bottom_text, "FLAT") != NULL);
-
-    view.wave_frame_ready = 0U;
-    ECGMonitorUI_Render(&view, plot,
-                        (uint16_t)(sizeof(plot) / sizeof(plot[0])));
-    CHECK(strstr(last_bottom_text, "DMA WAIT") != NULL);
-
-    view.wave_frame_ready = 1U;
-    view.wave_span = 40U;
-    ECGMonitorUI_Render(&view, plot,
-                        (uint16_t)(sizeof(plot) / sizeof(plot[0])));
+    CHECK(strstr(last_bottom_text, "2s") != NULL);
+    CHECK(strstr(last_bottom_text, "ms") == NULL);
+    CHECK(strstr(last_bottom_text, "GOOD") != NULL);
 
     plot[40] = (int16_t)(plot[40] - 8);
+    view.waveform_revision++;
     fill_pixels = 0U;
     drawn_pixels = 0U;
     address_windows = 0U;
@@ -167,11 +158,40 @@ static void test_dynamic_refresh_has_bounded_spi_work(void)
     CHECK(fill_pixels < 20000U);
     CHECK((fill_pixels + drawn_pixels) < 21000U);
     CHECK(address_windows < 160U);
+
+    /* An unchanged revision must skip every waveform scanline. */
+    fill_pixels = 0U;
+    drawn_pixels = 0U;
+    address_windows = 0U;
+    ECGMonitorUI_Render(&view, plot,
+                        (uint16_t)(sizeof(plot) / sizeof(plot[0])));
+    CHECK(fill_pixels == 0U);
+    CHECK(drawn_pixels == 0U);
+    CHECK(address_windows == 0U);
+
+    /* Gain must redraw a frozen waveform even if no new sample arrived. */
+    view.gain = 2U;
+    fill_pixels = 0U;
+    drawn_pixels = 0U;
+    address_windows = 0U;
+    ECGMonitorUI_Render(&view, plot,
+                        (uint16_t)(sizeof(plot) / sizeof(plot[0])));
+    CHECK(drawn_pixels > 0U);
+    CHECK(address_windows >= 93U);
+}
+
+static void test_monitor_static_page_uses_default_two_second_window(void)
+{
+    last_bottom_text[0] = '\0';
+    ECGMonitorUI_DrawStatic(ECG_MONITOR_PAGE);
+    CHECK(strstr(last_bottom_text, "2s") != NULL);
+    CHECK(strstr(last_bottom_text, "5s") == NULL);
 }
 
 int main(void)
 {
     test_dynamic_refresh_has_bounded_spi_work();
+    test_monitor_static_page_uses_default_two_second_window();
     puts("ecg_monitor_ui bounded refresh tests passed");
     return EXIT_SUCCESS;
 }

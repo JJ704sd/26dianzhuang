@@ -14,11 +14,8 @@
     (ECG_WAVE_PLOT_X1 - ECG_WAVE_PLOT_X0 + 1U)
 
 static ecg_monitor_view_t previous_view;
-static int16_t previous_plot[ECG_MAX_PLOT_POINTS];
 static uint16_t plot_scanline[ECG_MAX_PLOT_POINTS];
-static uint16_t previous_plot_count;
 static uint8_t previous_view_valid;
-static uint8_t previous_plot_valid;
 
 /* The TFT Chinese font is indexed by two-byte GBK codes. */
 static const uint8_t text_waveform[] = {0xCA,0xBE,0xB2,0xA8,0x00};
@@ -27,27 +24,6 @@ static const uint8_t text_input_status[] =
 static const uint8_t text_status[] = {0xD7,0xB4,0xCC,0xAC,0x00};
 static const uint8_t text_amplitude[] = {0xB7,0xF9,0xD6,0xB5,0x00};
 static const uint8_t text_frequency[] = {0xC6,0xB5,0xC2,0xCA,0x00};
-static const uint8_t text_output[] = {0xCA,0xE4,0xB3,0xF6,0x00};
-static const uint8_t text_input[] = {0xCA,0xE4,0xC8,0xEB,0x00};
-static const uint8_t text_open_close[] = {0xBF,0xAA,0xB9,0xD8,0x00};
-
-static const char *ecg_monitor_quality_text(ecg_signal_quality_t quality)
-{
-    switch (quality)
-    {
-        case ECG_SIGNAL_GOOD:
-            return "GOOD";
-        case ECG_SIGNAL_POOR:
-            return "POOR";
-        case ECG_SIGNAL_LEAD_OFF:
-            return "LEAD OFF";
-        case ECG_SIGNAL_CLIPPED:
-            return "CLIPPED";
-        case ECG_SIGNAL_WAIT:
-        default:
-            return "WAIT";
-    }
-}
 
 static uint16_t ecg_monitor_quality_color(ecg_signal_quality_t quality)
 {
@@ -170,25 +146,19 @@ static void ecg_monitor_draw_plot_scanlines(const ecg_monitor_view_t *view,
 }
 
 static uint8_t ecg_monitor_plot_changed(const ecg_monitor_view_t *view,
-                                        const int16_t *plot_y,
                                         uint16_t plot_count)
 {
-    uint16_t i;
-
-    if ((previous_plot_valid == 0U) ||
+    if ((previous_view_valid == 0U) ||
         (previous_view.page != view->page) ||
-        (previous_plot_count != plot_count) ||
+        (plot_count < 2U) ||
+        (previous_view.waveform_revision != view->waveform_revision) ||
+        (previous_view.gain != view->gain) ||
+        (previous_view.window_seconds != view->window_seconds) ||
+        (previous_view.fit_limited != view->fit_limited) ||
         (previous_view.event_marker_valid != view->event_marker_valid) ||
         (previous_view.event_marker_x != view->event_marker_x))
     {
         return 1U;
-    }
-    for (i = 0U; i < plot_count; ++i)
-    {
-        if (previous_plot[i] != plot_y[i])
-        {
-            return 1U;
-        }
     }
     return 0U;
 }
@@ -200,14 +170,13 @@ static void ecg_monitor_update_plot(const ecg_monitor_view_t *view,
                                     uint16_t y0, uint16_t y1,
                                     uint16_t center_y)
 {
-    uint16_t i;
     uint16_t width = (uint16_t)(x1 - x0 + 1U);
 
     if (plot_count > width)
     {
         plot_count = width;
     }
-    if (ecg_monitor_plot_changed(view, plot_y, plot_count) == 0U)
+    if (ecg_monitor_plot_changed(view, plot_count) == 0U)
     {
         return;
     }
@@ -217,12 +186,6 @@ static void ecg_monitor_update_plot(const ecg_monitor_view_t *view,
     ecg_monitor_draw_plot_scanlines(view, plot_y, plot_count,
                                     x0, x1, y0, y1, center_y);
 
-    for (i = 0U; i < plot_count; ++i)
-    {
-        previous_plot[i] = plot_y[i];
-    }
-    previous_plot_count = plot_count;
-    previous_plot_valid = 1U;
 }
 
 static void ecg_monitor_render_overview(const ecg_monitor_view_t *view,
@@ -314,7 +277,7 @@ static void ecg_monitor_render_overview(const ecg_monitor_view_t *view,
         TFT_ShowChinese(2U, 98U, (uint8_t *)text_input_status,
                         ecg_monitor_quality_color(view->quality),
                         BLACK, 12U, 0U);
-        sprintf(text, "%-8s", ecg_monitor_quality_text(view->quality));
+        sprintf(text, "%-8s", ECGAcqCore_QualityText(view->quality));
         TFT_ShowString(52U, 96U, (const uint8_t *)text,
                        ecg_monitor_quality_color(view->quality),
                        BLACK, 16U, 0U);
@@ -378,158 +341,29 @@ static void ecg_monitor_render_wave(const ecg_monitor_view_t *view,
     if ((previous_view_valid == 0U) ||
         (previous_view.quality != view->quality) ||
         (previous_view.gain != view->gain) ||
-        (previous_view.timebase_ms != view->timebase_ms) ||
         (previous_view.fit_limited != view->fit_limited) ||
-        (previous_view.wave_frame_ready != view->wave_frame_ready) ||
-        (previous_view.wave_span != view->wave_span) ||
+        (previous_view.window_seconds != view->window_seconds) ||
         (previous_view.event_marker_valid != view->event_marker_valid))
     {
         TFT_Fill(0U, 112U, ECG_SCREEN_X_END, ECG_SCREEN_Y_END, BLACK);
         TFT_ShowChinese(0U, 114U, (uint8_t *)text_status,
                         ecg_monitor_quality_color(view->quality),
                         BLACK, 12U, 0U);
-        if (view->wave_frame_ready == 0U)
-        {
-            sprintf(text, "DMA WAIT x%u %ums", (unsigned int)display_gain,
-                    (unsigned int)view->timebase_ms);
-        }
-        else if (view->wave_span < 2U)
-        {
-            sprintf(text, "FLAT    x%u %ums", (unsigned int)display_gain,
-                    (unsigned int)view->timebase_ms);
-        }
-        else
-        {
-            sprintf(text, "%-8s x%u%s %ums",
-                    ecg_monitor_quality_text(view->quality),
-                    (unsigned int)display_gain,
-                    (view->fit_limited != 0U) ? "F" : " ",
-                    (unsigned int)view->timebase_ms);
-        }
+        sprintf(text, "%-8s x%u%s %us",
+                ECGAcqCore_QualityText(view->quality),
+                (unsigned int)display_gain,
+                (view->fit_limited != 0U) ? "F" : " ",
+                (unsigned int)view->window_seconds);
         TFT_ShowString(26U, 112U, (const uint8_t *)text,
                        ecg_monitor_quality_color(view->quality),
                        BLACK, 16U, 0U);
     }
 }
 
-static void ecg_monitor_render_frequency(const ecg_monitor_view_t *view)
-{
-    char text[21];
-    uint32_t difference;
-    uint32_t tolerance;
-    uint32_t measured = view->pwm_measured_hz;
-
-    if ((previous_view_valid == 0U) ||
-        (previous_view.pwm_target_hz != view->pwm_target_hz) ||
-        (previous_view.pwm_enabled != view->pwm_enabled))
-    {
-        TFT_Fill(0U, 24U, ECG_SCREEN_X_END, 40U, BLACK);
-        TFT_ShowChinese(0U, 26U, (uint8_t *)text_output,
-                        (view->pwm_enabled != 0U) ? GREEN : YELLOW,
-                        BLACK, 12U, 0U);
-        sprintf(text, ":%4uHz %s", (unsigned int)view->pwm_target_hz,
-                (view->pwm_enabled != 0U) ? "ON " : "OFF");
-        TFT_ShowString(24U, 24U, (const uint8_t *)text,
-                       (view->pwm_enabled != 0U) ? GREEN : YELLOW,
-                       BLACK, 16U, 0U);
-    }
-
-    if ((previous_view_valid == 0U) ||
-        (previous_view.pwm_target_hz != view->pwm_target_hz) ||
-        (previous_view.pwm_measured_hz != view->pwm_measured_hz) ||
-        (previous_view.pwm_enabled != view->pwm_enabled))
-    {
-        TFT_Fill(0U, 48U, ECG_SCREEN_X_END, 88U, BLACK);
-        if (measured == 0U)
-        {
-            TFT_ShowChinese(0U, 50U, (uint8_t *)text_input,
-                            YELLOW, BLACK, 12U, 0U);
-            TFT_ShowString(24U, 48U, (const uint8_t *)":----Hz NO SIG",
-                           YELLOW, BLACK, 16U, 0U);
-            TFT_ShowString(0U, 72U, (const uint8_t *)"DIFF:---- NO DATA",
-                           YELLOW, BLACK, 16U, 0U);
-        }
-        else
-        {
-            if (measured > 99999U)
-            {
-                TFT_ShowChinese(0U, 50U, (uint8_t *)text_input,
-                                CYAN, BLACK, 12U, 0U);
-                TFT_ShowString(24U, 48U, (const uint8_t *)":>99KHz SIGNAL",
-                               CYAN, BLACK, 16U, 0U);
-            }
-            else
-            {
-                TFT_ShowChinese(0U, 50U, (uint8_t *)text_input,
-                                CYAN, BLACK, 12U, 0U);
-                sprintf(text, ":%5luHz SIGNAL", (unsigned long)measured);
-                TFT_ShowString(24U, 48U, (const uint8_t *)text,
-                               CYAN, BLACK, 16U, 0U);
-            }
-
-            if (view->pwm_enabled == 0U)
-            {
-                TFT_ShowString(0U, 72U, (const uint8_t *)"SOURCE:EXTERNAL",
-                               CYAN, BLACK, 16U, 0U);
-            }
-            else
-            {
-                difference = (measured >= view->pwm_target_hz) ?
-                             (measured - view->pwm_target_hz) :
-                             ((uint32_t)view->pwm_target_hz - measured);
-                tolerance = (uint32_t)view->pwm_target_hz / 100U;
-                if (tolerance < 2U)
-                {
-                    tolerance = 2U;
-                }
-                if (difference > 9999U)
-                {
-                    difference = 9999U;
-                }
-                sprintf(text, "ERR:%4luHz %s", (unsigned long)difference,
-                        (difference <= tolerance) ? "MATCH" : "MISMATCH");
-                TFT_ShowString(0U, 72U, (const uint8_t *)text,
-                               (difference <= tolerance) ? GREEN : YELLOW,
-                               BLACK, 16U, 0U);
-            }
-        }
-    }
-}
-
 void ECGMonitorUI_DrawStatic(ecg_monitor_page_t page)
 {
     previous_view_valid = 0U;
-    previous_plot_valid = 0U;
-    previous_plot_count = 0U;
     TFT_Fill(0U, 0U, ECG_SCREEN_X_END, ECG_SCREEN_Y_END, BLACK);
-    if (page == ECG_FREQ_PAGE)
-    {
-        TFT_ShowString(0U, 0U, (const uint8_t *)"PWM",
-                       WHITE, BLACK, 16U, 0U);
-        TFT_ShowChinese(28U, 2U, (uint8_t *)text_frequency,
-                        WHITE, BLACK, 12U, 0U);
-        TFT_ShowChinese(0U, 26U, (uint8_t *)text_output,
-                        YELLOW, BLACK, 12U, 0U);
-        TFT_ShowString(24U, 24U, (const uint8_t *)":----Hz OFF",
-                       YELLOW, BLACK, 16U, 0U);
-        TFT_ShowChinese(0U, 50U, (uint8_t *)text_input,
-                        YELLOW, BLACK, 12U, 0U);
-        TFT_ShowString(24U, 48U, (const uint8_t *)":----Hz NO SIG",
-                       YELLOW, BLACK, 16U, 0U);
-        TFT_ShowString(0U, 72U, (const uint8_t *)"DIFF:---- NO DATA",
-                       YELLOW, BLACK, 16U, 0U);
-        TFT_ShowString(0U, 96U, (const uint8_t *)"PA2>PA6 DUTY:50",
-                       WHITE, BLACK, 16U, 0U);
-        TFT_ShowString(0U, 112U, (const uint8_t *)"KEYD:",
-                       GRAY, BLACK, 16U, 0U);
-        TFT_ShowChinese(40U, 112U, (uint8_t *)text_open_close,
-                        GRAY, BLACK, 16U, 0U);
-        TFT_ShowString(72U, 112U, (const uint8_t *)"ENC:",
-                       GRAY, BLACK, 16U, 0U);
-        TFT_ShowChinese(104U, 114U, (uint8_t *)text_frequency,
-                        GRAY, BLACK, 12U, 0U);
-        return;
-    }
     if (page == ECG_WAVE_PAGE)
     {
         TFT_ShowChinese(0U, 0U, (uint8_t *)text_waveform,
@@ -541,7 +375,7 @@ void ECGMonitorUI_DrawStatic(ecg_monitor_page_t page)
                               (uint16_t)ECG_WAVE_PLOT_CENTER_Y);
         TFT_ShowChinese(0U, 114U, (uint8_t *)text_status,
                         YELLOW, BLACK, 12U, 0U);
-        TFT_ShowString(26U, 112U, (const uint8_t *)"DMA WAIT x1 5ms",
+        TFT_ShowString(26U, 112U, (const uint8_t *)"WAIT    x1  2s",
                        YELLOW, BLACK, 16U, 0U);
         return;
     }
@@ -569,7 +403,7 @@ void ECGMonitorUI_DrawStatic(ecg_monitor_page_t page)
                    YELLOW, BLACK, 16U, 0U);
     TFT_ShowChinese(2U, 114U, (uint8_t *)text_amplitude,
                     WHITE, BLACK, 12U, 0U);
-    TFT_ShowString(28U, 112U, (const uint8_t *)"x1  5s",
+    TFT_ShowString(28U, 112U, (const uint8_t *)"x1  2s",
                    WHITE, BLACK, 16U, 0U);
 }
 
@@ -579,14 +413,6 @@ void ECGMonitorUI_Render(const ecg_monitor_view_t *view,
 {
     if (view == (const ecg_monitor_view_t *)0)
     {
-        return;
-    }
-
-    if (view->page == ECG_FREQ_PAGE)
-    {
-        ecg_monitor_render_frequency(view);
-        previous_view = *view;
-        previous_view_valid = 1U;
         return;
     }
 

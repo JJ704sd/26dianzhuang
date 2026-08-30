@@ -14,37 +14,36 @@ function Invoke-NativeTest($name, $sources, $includes) {
     if ($LASTEXITCODE -ne 0) { throw "$name failed" }
 }
 
-Write-Host '[1/6] ECG core host tests'
+Write-Host '[1/5] ECG core host tests'
 Invoke-NativeTest 'demo14_ecg_acq_core' @(
     (Join-Path $PSScriptRoot 'test_ecg_acq_core.c'),
     (Join-Path $root 'Middle\ecg_acq_core.c')
 ) @((Join-Path $root 'Middle'))
 
-Write-Host '[2/6] ECG monitor UI host tests'
+Write-Host '[2/5] ECG monitor UI host tests'
 Invoke-NativeTest 'demo14_ecg_monitor_ui' @(
     (Join-Path $PSScriptRoot 'test_ecg_monitor_ui.c'),
-    (Join-Path $root 'APP\ecg_monitor_ui.c')
+    (Join-Path $root 'APP\ecg_monitor_ui.c'),
+    (Join-Path $root 'Middle\ecg_acq_core.c')
 ) @((Join-Path $PSScriptRoot 'stubs'),
     (Join-Path $root 'APP'),
     (Join-Path $root 'Middle'))
 
-Write-Host '[3/6] Chinese UI font tests'
+Write-Host '[3/5] ECG acquisition task behavior tests'
+Invoke-NativeTest 'demo14_ecg_acq_task' @(
+    (Join-Path $PSScriptRoot 'test_ecg_acq_task.c'),
+    (Join-Path $root 'APP\ecg_acq_task.c'),
+    (Join-Path $root 'Middle\ecg_acq_core.c')
+) @((Join-Path $PSScriptRoot 'stubs'),
+    (Join-Path $root 'APP'),
+    (Join-Path $root 'Hardware'),
+    (Join-Path $root 'Middle'))
+
+Write-Host '[4/5] Chinese UI font tests'
 Invoke-NativeTest 'demo14_chinese_font' @(
     (Join-Path $PSScriptRoot 'test_chinese_font.c')
 ) @((Join-Path $root 'Middle'))
 
-Write-Host '[4/6] PWM host tests'
-Invoke-NativeTest 'demo14_mid_pwm' @(
-    (Join-Path $PSScriptRoot 'test_mid_pwm.c'),
-    (Join-Path $root 'Middle\mid_pwm.c')
-) @((Join-Path $PSScriptRoot 'stubs'), (Join-Path $root 'Middle'))
-
-Write-Host '[5/6] Timer math and timeout tests'
-Invoke-NativeTest 'demo14_timer_math' @(
-    (Join-Path $PSScriptRoot 'test_timer_math.c'),
-    (Join-Path $root 'Middle\timer_math.c')
-) @((Join-Path $root 'Middle'))
-
-Write-Host '[6/6] Hospital monitor firmware contract'
+Write-Host '[5/5] ECG-only firmware contract'
 & (Join-Path $PSScriptRoot 'test_firmware_contract.ps1')
-Write-Host 'Demo14 ECG, PWM frequency monitor, and UI tests passed.'
+Write-Host 'Demo14 ECG acquisition and UI tests passed.'

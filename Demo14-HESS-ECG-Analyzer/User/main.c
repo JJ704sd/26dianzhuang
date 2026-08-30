@@ -35,11 +35,34 @@ static void scan_keys(void)
 
 static void dispatch_key(struct key_class *key)
 {
-    if (key->key_state != KEY_NoPress)
+    if (key->key_state == KEY_NoPress)
     {
-        ECGAcq_KeyHandle((uint16_t)key->key_pin, key->key_state);
-        key->key_state = KEY_NoPress;
+        return;
     }
+
+    if ((key->key_pin == KEY1_Pin) && (key->key_state == KeyPress))
+    {
+        ECGAcq_HandleAction(ECG_ACQ_ACTION_TOGGLE_RUN);
+    }
+    else if ((key->key_pin == KEY2_Pin) &&
+             (key->key_state == KeyDoublePress))
+    {
+        ECGAcq_HandleAction(ECG_ACQ_ACTION_TOGGLE_PAGE);
+    }
+    else if ((key->key_pin == KEY2_Pin) && (key->key_state == KeyPress))
+    {
+        ECGAcq_HandleAction(ECG_ACQ_ACTION_CYCLE_GAIN);
+    }
+    else if ((key->key_pin == KEY3_Pin) &&
+             (key->key_state == KeyDoublePress))
+    {
+        ECGAcq_HandleAction(ECG_ACQ_ACTION_RESET_MEASUREMENTS);
+    }
+    else if ((key->key_pin == KEY3_Pin) && (key->key_state == KeyPress))
+    {
+        ECGAcq_HandleAction(ECG_ACQ_ACTION_MARK_EVENT);
+    }
+    key->key_state = KEY_NoPress;
 }
 
 int main(void)
@@ -49,11 +72,8 @@ int main(void)
     mx_spi0_init();
     mx_adc_init();
     mx_tim0_adc_init();
-    mx_tim2_init();
-    mx_tim14_init();
     mx_tim15_init();
     Set_ADC_Channel(ADC_CHANNEL_3);
-    ADC_StreamInit();
 
     led_handle[led1] = led_init(LED1_GPIO_Port, LED1_Pin, RESET);
     led_handle[led2] = led_init(LED2_GPIO_Port, LED2_Pin, RESET);
@@ -75,10 +95,11 @@ int main(void)
     ECGAcq_StaticUI();
     timer_enable(TIMER0);
     timer_enable(TIMER15);
-    timer_enable(TIMER2);
 
     while (1)
     {
+        ecg_signal_quality_t quality;
+
         if (get_key_timer_value() >= 10U)
         {
             scan_keys();
@@ -98,14 +119,17 @@ int main(void)
 
         if (ec11_handle.ec11_direction != ec11_static)
         {
-            ECGAcq_Rotate((ec11_handle.ec11_direction == ec11_forward) ?
-                          1 : -1);
+            ECGAcq_HandleAction(
+                (ec11_handle.ec11_direction == ec11_forward) ?
+                ECG_ACQ_ACTION_WINDOW_5_SECONDS :
+                ECG_ACQ_ACTION_WINDOW_2_SECONDS);
             ec11_handle.ec11_direction = ec11_static;
         }
 
-        if ((ECGAcq_GetQuality() == ECG_SIGNAL_POOR) ||
-            (ECGAcq_GetQuality() == ECG_SIGNAL_LEAD_OFF) ||
-            (ECGAcq_GetQuality() == ECG_SIGNAL_CLIPPED))
+        quality = ECGAcq_GetQuality();
+        if ((quality == ECG_SIGNAL_POOR) ||
+            (quality == ECG_SIGNAL_LEAD_OFF) ||
+            (quality == ECG_SIGNAL_CLIPPED))
         {
             led_turn_on(&led_handle[led1]);
         }

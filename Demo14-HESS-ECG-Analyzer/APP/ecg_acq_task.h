@@ -6,7 +6,18 @@
 #include "ecg_monitor_ui.h"
 
 #define ECG_ACQ_WINDOW_MIN_SECONDS  2U
-#define ECG_ACQ_WINDOW_MAX_SECONDS 10U
+#define ECG_ACQ_WINDOW_MAX_SECONDS  5U
+
+typedef enum
+{
+    ECG_ACQ_ACTION_TOGGLE_RUN = 0,
+    ECG_ACQ_ACTION_CYCLE_GAIN,
+    ECG_ACQ_ACTION_TOGGLE_PAGE,
+    ECG_ACQ_ACTION_MARK_EVENT,
+    ECG_ACQ_ACTION_RESET_MEASUREMENTS,
+    ECG_ACQ_ACTION_WINDOW_2_SECONDS,
+    ECG_ACQ_ACTION_WINDOW_5_SECONDS
+} ecg_acq_action_t;
 
 void ECGAcq_Init(void);
 void ECGAcq_Start(void);
@@ -14,8 +25,7 @@ void ECGAcq_Stop(void);
 void ECGAcq_TimerTick1ms(void);
 void ECGAcq_StaticUI(void);
 void ECGAcq_ShowUI(void);
-void ECGAcq_KeyHandle(uint16_t key_pin, uint8_t key_state);
-void ECGAcq_Rotate(int8_t direction);
+void ECGAcq_HandleAction(ecg_acq_action_t action);
 uint8_t ECGAcq_IsActive(void);
 uint8_t ECGAcq_IsRunning(void);
 uint8_t ECGAcq_GetGain(void);

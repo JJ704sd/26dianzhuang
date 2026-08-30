@@ -1,15 +1,7 @@
-# Local IDE state and logs
-.vscode/*.log
-.vscode/*.lock
+Project/Objects/
+Project/Listings/
 Project/.vscode/
 Project/*.uvguix.*
 Project/*.uvoptx
-Project/*.log
-
-# Keil build intermediates; keep the flashable release image
-Project/Listings/*
-Project/Objects/*
-!Project/Objects/Oscilloscope.hex
-
-# Host-test executables are built in the system temp directory
-Tests/*.exe
+Project/*.build_log.htm
+Project/*_rebuild.log

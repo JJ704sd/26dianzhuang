@@ -1,9 +1,9 @@
 #include "mid_pwm.h"
 
-static volatile uint8_t pwm_state = PWM_OFF;
-static volatile uint16_t pwm_period = 1000;		//默认周期为1000
-static volatile uint16_t pwm_duty = 500;			//默认占空比为500						
-	
+static uint8_t 	pwm_state = PWM_OFF;
+static uint16_t pwm_period = 1000;		//默认周期为1000
+static uint16_t pwm_duty = 500;			//默认占空比为500
+
 /*
  * 函数内容：设置pwm输出的占空比
  * 函数参数：uint16_t pwm_duty -- pwm占空比
@@ -67,6 +67,7 @@ void set_pwm_state(uint8_t state)
 {
 	if(state == PWM_ON)
 	{
+		timer_counter_value_config(TIMER14,0U);
 		timer_event_software_generate(TIMER14,TIMER_EVENT_SRC_UPG);
 		//timer_channel_output_state_config(TIMER14,TIMER_CH_0,TIMER_CCXN_ENABLE);
 		timer_enable(TIMER14);	//开始pwm输出定时器计时
@@ -74,7 +75,7 @@ void set_pwm_state(uint8_t state)
 	}
 	else if(state == PWM_OFF)
 	{
-		//timer_channel_output_state_config(TIMER14,TIMER_CH_0,TIMER_CCXN_DISABLE); 
+		//timer_channel_output_state_config(TIMER14,TIMER_CH_0,TIMER_CCXN_DISABLE);
 		timer_disable(TIMER14);	//开始pwm输出定时器计时
 		pwm_state = PWM_OFF;
 	}

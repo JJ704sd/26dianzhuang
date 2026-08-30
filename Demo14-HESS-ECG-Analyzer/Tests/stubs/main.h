@@ -11,7 +11,14 @@
 #define GPIO_MODE_AF 2U
 #define GPIO_PUPD_NONE 0U
 #define GPIO_PIN_2 2U
+#define GPIO_PIN_13 13U
+#define GPIO_PIN_14 14U
+#define GPIO_PIN_15 15U
 #define GPIO_AF_0 0U
+
+#define KEY1_Pin GPIO_PIN_13
+#define KEY2_Pin GPIO_PIN_14
+#define KEY3_Pin GPIO_PIN_15
 
 void timer_channel_output_pulse_value_config(uint32_t timer,
                                               uint16_t channel,

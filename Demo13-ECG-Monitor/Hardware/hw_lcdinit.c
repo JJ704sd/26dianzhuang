@@ -12,7 +12,6 @@ void TFT_WR_DATA8(uint8_t data)
 
 		while(spi_i2s_flag_get(SPI0,SPI_FLAG_TBE) == RESET)
 		{
-			/* 等待发送缓冲区空闲 */
 		}
     spi_i2s_data_transmit(SPI0, data);  									//发送数据
 
@@ -34,12 +33,10 @@ void TFT_WR_DATA(uint16_t data)
 
 	while(spi_i2s_flag_get(SPI0,SPI_FLAG_TBE) == RESET)
 	{
-		/* 等待发送缓冲区空闲 */
 	}
   spi_i2s_data_transmit(SPI0, sendData[0]);  									//发送数据
 	while(spi_i2s_flag_get(SPI0,SPI_FLAG_TBE) == RESET)
 	{
-		/* 等待发送缓冲区空闲 */
 	}
   spi_i2s_data_transmit(SPI0, sendData[1]);  									//发送数据
 
@@ -58,7 +55,6 @@ void TFT_WR_REG(uint8_t reg)
 
 	while(spi_i2s_flag_get(SPI0,SPI_FLAG_TBE) == RESET)
 	{
-		/* 等待发送缓冲区空闲 */
 	}
   spi_i2s_data_transmit(SPI0, reg);  									//发送数据
 

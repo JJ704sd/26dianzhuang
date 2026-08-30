@@ -5,7 +5,5 @@
 
 void mx_tim15_init(void);
 void mx_tim0_adc_init(void);
-void mx_tim2_init(void);
-void mx_tim14_init(void);
 
 #endif

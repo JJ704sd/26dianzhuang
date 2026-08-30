@@ -581,11 +581,6 @@
               <FilePath>..\Middle\mid_timer.c</FilePath>
             </File>
             <File>
-              <FileName>mid_pwm.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Middle\mid_pwm.c</FilePath>
-            </File>
-            <File>
               <FileName>mid_lcd.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Middle\mid_lcd.c</FilePath>
@@ -594,11 +589,6 @@
               <FileName>mid_adc.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Middle\mid_adc.c</FilePath>
-            </File>
-            <File>
-              <FileName>timer_math.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Middle\timer_math.c</FilePath>
             </File>
             <File>
               <FileName>ecg_acq_core.c</FileName>
