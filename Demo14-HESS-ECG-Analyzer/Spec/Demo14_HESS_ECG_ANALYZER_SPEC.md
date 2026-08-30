@@ -11,12 +11,15 @@ metrics, and exposes signal-quality status on the 160 x 128 TFT.
 
 - MCU: GD32E230C8T6.
 - Analog ECG input: PA3 / ADC channel 3, 0 V through 3.3 V only.
-- PWM test output: PA2 / TIMER14 channel 0, 50% duty.
+- PWM test output: PA2 / TIMER14 channel 0, 0 V/3.3 V logic levels and 50% duty.
 - Frequency-monitor input: PA6 / TIMER2 channel 0, 0 V through 3.3 V only.
-- Sample rate: 250 Hz, driven from the existing 1 ms application tick.
+- ECG analysis rate: 250 Hz, driven from the existing 1 ms application tick.
+- WAVE preview: TIMER0-triggered ADC plus circular DMA at 40 kSa/s, using a
+  stable 200-sample half-frame (5 ms).
 - Display: SPI TFT, 160 x 128 pixels.
 - Keys and rotary encoder may control view options without blocking sampling.
-- The ECG input is measurement-only; Demo14 does not generate a PWM test signal.
+- The ECG input is measurement-only; the separate PA2 output can generate the
+  selectable PWM test signal shown on the `FREQ` page.
 
 ## Functional requirements
 
@@ -48,16 +51,27 @@ metrics, and exposes signal-quality status on the 160 x 128 TFT.
     English ASCII naming. User-facing TFT descriptions may use the verified GBK
     glyph set.
 12. The `FREQ` page keeps PA2's configured PWM frequency separate from PA6's
-    captured frequency, expires stale input after 1500 ms, and supports
-    100/250/500/1000/2000 Hz presets without floating point.
-13. The waveform history is derived from the raw 12-bit ADC sample, centered at
-    midscale and saturated to the signed display range. Baseline removal and
-    smoothing remain confined to ECG analysis so a steady square-wave level is
-    not rendered as an exponential decay.
+    captured frequency, expires stale input after 2500 ms, and supports
+    1/2/5/10/20 Hz presets without floating point. Startup selects 2 Hz so the
+    output is immediately suitable for a visible low-frequency self-test.
+13. The MONITOR history is derived from the raw 12-bit ADC sample at 250 Hz.
+    The WAVE page uses an independent 40 kSa/s TIMER0-triggered circular-DMA
+    frame with a 5 ms timebase and rising-edge alignment. Baseline removal and
+    smoothing remain confined to ECG analysis, so the display path neither
+    turns square-wave plateaus into exponential decays nor aliases 1 kHz input
+    against the 250 Hz ECG analysis rate.
 14. Every Chinese label used by the UI has a matching 12- or 16-pixel glyph.
     Font-table indexes are explicit GBK byte escapes so source-file encoding
     cannot change the lookup key; the 16-pixel `示` glyph has two distinct
     horizontal strokes.
+15. Vertical mapping automatically centers the current frame and applies the
+    requested x1/x2/x4 gain until a two-pixel safety margin would be exceeded.
+    It then limits the effective scale, keeps the complete waveform visible,
+    and displays `F` to identify the automatic FIT condition.
+16. Live pages are scheduled every 40 ms (25 FPS). A changed waveform frame is
+    composed directly into final-color scanlines and sent as one SPI burst per
+    row, keeping the 156 x 93 WAVE plot to 93 LCD address windows per frame and
+    avoiding a visible all-black intermediate frame.
 
 ## Resource and safety constraints
 
@@ -81,8 +95,16 @@ metrics, and exposes signal-quality status on the 160 x 128 TFT.
    250 Hz sampling, BPM, RR, RMSSD, lead-off, clipping, and key/encoder polarity.
 6. Repeat with the intended analog front end and realistic noise before treating
    the readings as accepted hardware results.
-7. Verify PA2 PWM with an oscilloscope, then connect PA2 to PA6 and check target,
-   measured frequency, loopback error, preset switching, and no-signal timeout.
-8. Apply a safe, midscale-biased square wave to PA3 and confirm that both high
-   and low plateaus remain flat on `WAVE`; then inspect all Chinese page labels,
-   especially `示波`, on the physical TFT.
+7. Verify PA2 at 1 Hz and 2 Hz with an oscilloscope or logic analyzer. Confirm
+   50% duty and approximately 0 V/3.3 V logic levels, then connect PA2 to PA6
+   and check target, measured frequency, loopback error, preset switching, and
+   no-signal timeout. A 1 Hz result may need about two seconds to become valid.
+8. Apply a safe 1 kHz, 2 Vpp, 1.65 V offset square wave to PA3, enter `WAVE`,
+   and confirm approximately five stable cycles across the 5 ms plot with flat
+   high/low plateaus. Repeat with sine and triangle waves.
+9. Cycle KEY2 through x1/x2/x4. Each waveform must remain inside the plot with
+   a visible margin; `F` must appear when automatic FIT limits the requested
+   scale. Inspect all Chinese labels, especially `示波`, on the physical TFT.
+10. For the practical upper-frequency demonstration, verify square/triangle at
+    up to 4 kHz and sine at up to 5 kHz. Edge rounding near the upper limit is
+    acceptable, but false low-frequency alias waveforms are not.

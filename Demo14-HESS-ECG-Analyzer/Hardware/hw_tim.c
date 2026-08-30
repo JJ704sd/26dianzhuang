@@ -1,6 +1,45 @@
 #include "hw_tim.h"
 
 #define FREQ_CAPTURE_FILTER 0x03U
+#define ADC_SCOPE_TIMER_PERIOD 24U
+#define ADC_SCOPE_TIMER_COMPARE 12U
+
+void mx_tim0_adc_init(void)
+{
+    timer_parameter_struct timer_initpara;
+    timer_oc_parameter_struct timer_ocinitpara;
+
+    rcu_periph_clock_enable(RCU_TIMER0);
+    timer_deinit(TIMER0);
+    timer_struct_para_init(&timer_initpara);
+    timer_initpara.prescaler = 71U;
+    timer_initpara.alignedmode = TIMER_COUNTER_EDGE;
+    timer_initpara.counterdirection = TIMER_COUNTER_UP;
+    timer_initpara.period = ADC_SCOPE_TIMER_PERIOD;
+    timer_initpara.clockdivision = TIMER_CKDIV_DIV1;
+    timer_initpara.repetitioncounter = 0U;
+    timer_init(TIMER0, &timer_initpara);
+
+    timer_channel_output_struct_para_init(&timer_ocinitpara);
+    timer_ocinitpara.outputstate = TIMER_CCX_ENABLE;
+    timer_ocinitpara.outputnstate = TIMER_CCXN_DISABLE;
+    timer_ocinitpara.ocpolarity = TIMER_OC_POLARITY_HIGH;
+    timer_ocinitpara.ocnpolarity = TIMER_OCN_POLARITY_HIGH;
+    timer_ocinitpara.ocidlestate = TIMER_OC_IDLE_STATE_LOW;
+    timer_ocinitpara.ocnidlestate = TIMER_OCN_IDLE_STATE_LOW;
+    timer_channel_output_config(TIMER0, TIMER_CH_0, &timer_ocinitpara);
+    /* Keep CH0 compare strictly inside the 0..ARR interval.  ADC triggering
+       depends on this compare event; placing CCR at ARR makes the event share
+       the rollover boundary and can leave the DMA stream without frames. */
+    timer_channel_output_pulse_value_config(TIMER0, TIMER_CH_0,
+                                            ADC_SCOPE_TIMER_COMPARE);
+    timer_channel_output_mode_config(TIMER0, TIMER_CH_0, TIMER_OC_MODE_PWM1);
+    timer_channel_output_shadow_config(TIMER0, TIMER_CH_0,
+                                       TIMER_OC_SHADOW_DISABLE);
+    timer_auto_reload_shadow_enable(TIMER0);
+    timer_primary_output_config(TIMER0, ENABLE);
+    timer_disable(TIMER0);
+}
 
 /*
 *   函数内容：初始化通用定时器15
@@ -114,10 +153,10 @@ void mx_tim14_init(void)
 	
 	timer_struct_para_init(&timer_initpara);	//初始化定时器结构体参数
 	
-	timer_initpara.prescaler         = 71;									//预分频器参数
+	timer_initpara.prescaler         = 7199;								//10 kHz计数，支持1 Hz低频自测
 	timer_initpara.alignedmode       = TIMER_COUNTER_EDGE;	//边沿对齐
 	timer_initpara.counterdirection  = TIMER_COUNTER_UP;		//向上计数
-	timer_initpara.period            = 999;									//周期
+	timer_initpara.period            = 9999;								//默认1 Hz周期
 	timer_initpara.clockdivision     = TIMER_CKDIV_DIV1;		//时钟分频
 	timer_initpara.repetitioncounter = 0;								    //重装载值
 	timer_init(TIMER14, &timer_initpara);
@@ -133,7 +172,7 @@ void mx_tim14_init(void)
 	
 	timer_channel_output_config(TIMER14, TIMER_CH_0, &timer_ocinitpara);
 	
-	timer_channel_output_pulse_value_config(TIMER14, TIMER_CH_0, 500);	//输出比较值
+	timer_channel_output_pulse_value_config(TIMER14, TIMER_CH_0, 5000);	//默认50%占空比
 	
 	//输出模式0，当计时器小于比较值时，输出有效电平，为高，大于比较器值时输出为低
 	timer_channel_output_mode_config(TIMER14, TIMER_CH_0, TIMER_OC_MODE_PWM0);

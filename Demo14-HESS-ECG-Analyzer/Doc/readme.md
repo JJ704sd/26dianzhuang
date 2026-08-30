@@ -16,21 +16,23 @@ demonstration. Standard compact units and ECG terms (`HR`, `BPM`, `RR`,
 
 - `MONITOR`: ECG trace, large BPM value, RR, RMSSD, quality, gain, time window,
   run/freeze state, and event indication.
-- `WAVE`: 156 x 93 pixel enlarged ECG plot with a compact BPM/status strip.
+- `WAVE`: 156 x 93 pixel high-speed preview. TIMER0 triggers the ADC at
+  40 kSa/s; circular DMA supplies a stable 200-sample frame, giving a 5 ms
+  timebase with rising-edge alignment.
 - Both waveform areas use sparse minor intersections, continuous major grid
   lines, a highlighted center reference, and a clear plot border. This grid is
   for visual comparison only and is not calibrated ECG paper.
 - `FREQ`: displays PA2 PWM target frequency, PA6 captured frequency, loopback
   error, explicit `MATCH`/`MISMATCH` status, output state, and `NO SIGNAL` after
-  a 1500 ms capture timeout. The match status checks the loopback signal path;
+  a 2500 ms capture timeout. The match status checks the loopback signal path;
   it is not an independent oscillator calibration.
 - `SW1` short press: run/freeze.
 - `SW2` short press: cycle x1/x2/x4 gain.
 - `SW2` double press: cycle `MONITOR`, `WAVE`, and `FREQ` pages.
 - `SW3` short press: add an event marker; double press: reset measurements.
 - Rotary encoder: select a 2/5/10 second time window.
-- On `FREQ`, rotary encoder selects 100/250/500/1000/2000 Hz; encoder push
-  (`KEYD`) toggles the PA2 PWM output. PWM starts disabled.
+- On `FREQ`, rotary encoder selects 1/2/5/10/20 Hz; encoder push (`KEYD`)
+  toggles the PA2 PWM output. The startup selection is 2 Hz; PWM starts disabled.
   While disabled, PA2 is configured as a GPIO output and held low.
 
 ## Build and flash
@@ -44,6 +46,9 @@ demonstration. Standard compact units and ECG terms (`HR`, `BPM`, `RR`,
    PA6. PA6 may instead monitor an external 0 V through 3.3 V PWM source.
    PA6 uses an internal pull-down and a digital capture filter so an open input
    has a defined idle state and short glitches are less likely to be counted.
+   PA2 is a 0 V/3.3 V push-pull logic output at 50% duty; it does not provide an
+   adjustable analog amplitude. At 1 Hz, allow about two seconds for two capture
+   edges before judging the PA6 reading.
 
 Do not connect a patient or an unisolated electrode circuit directly to the
 development board. This demonstration is not a medical device.
@@ -66,12 +71,14 @@ inside 0 V through 3.3 V; for example, 1.0 Vpp with a 1.65 V offset is a safe
 starting point. A source configured for negative voltage or more than 3.3 V
 must not be connected directly to PA3.
 
-The dynamic UI uses incremental waveform restoration and updates numeric fields
-only when their values change. Large solid regions are sent as one continuous
-SPI color burst, and chip select is released only after the final SPI bit has
-shifted out. A heart-rate result becomes unavailable after three seconds with
-no valid R peak, and invalid lead-off/clipped input never presents an old BPM as
-a current reading.
+The dynamic UI is scheduled every 40 ms (25 FPS) and updates numeric fields only
+when their values change. Changed plots are composed directly into final-color
+scanlines and sent with one SPI burst per row: the 156 x 93 WAVE plot therefore
+uses 93 address windows instead of roughly one thousand per-pixel windows, with
+no all-black intermediate frame. Chip select is released only after the final
+SPI bit has shifted out. A heart-rate result becomes unavailable after three
+seconds with no valid R peak, and invalid lead-off/clipped input never presents
+an old BPM as current.
 
 The plotted waveform now uses the raw ADC sample centered around 2048, while
 heart-rate detection continues to use the baseline-suppressed and smoothed ECG
@@ -80,8 +87,30 @@ wave without weakening the ECG analysis path. Chinese font indexes are stored
 as explicit GBK byte escapes, and host checks cover every Chinese label used by
 the UI plus the readable structure of `示` in `示波`.
 
+KEY2 still requests x1/x2/x4 vertical gain. The display automatically centers
+each visible frame and limits only the effective scale when the requested gain
+would leave the plot. A trailing `F` beside the gain means FIT is active; the
+complete waveform is therefore kept at least two pixels away from the border.
+
+## Electrical-training acceptance check
+
+Use these settings for a repeatable bench demonstration:
+
+| Check | Signal/source setting | Pass condition on Demo14 |
+| --- | --- | --- |
+| 1 kHz square | 2 Vpp, +1.65 V offset, High-Z, common ground | WAVE shows about five cycles in 5 ms; both plateaus and edges are recognizable |
+| 1 kHz sine/triangle | 2 Vpp, +1.65 V offset | Shape is recognizable and no false slow wave is shown |
+| Vertical gain | Repeat at x1, x2 and x4 | Entire trace remains inside the grid; `F` appears if auto-fit is required |
+| Practical frequency ceiling | Square/triangle up to 4 kHz; sine up to 5 kHz | No low-frequency alias trace; modest edge rounding at the ceiling is acceptable |
+| Full safe input span | PA3 always remains within 0 V through 3.3 V | No rail overvoltage; up to approximately 3.3 Vpp is representable only when centered near 1.65 V |
+| PWM low-frequency loopback | PA2 to PA6, select 1 Hz then 2 Hz, 50% duty | Target and measured values agree after acquisition; 1 Hz may take about two seconds for the first result |
+
+The recommended amplitude for formal checking remains 2 Vpp to preserve
+electrical headroom. A generator set to 0 V offset produces a negative half
+cycle and is not an acceptable PA3 test, even if the TFT appears to draw it.
+
 See `Spec/Demo14_HESS_ECG_ANALYZER_SPEC.md` for the base firmware contract and
-`Spec/Demo14_HOSPITAL_MONITOR_UI_SPEC.md` for the two-page UI contract and
+`Spec/Demo14_HOSPITAL_MONITOR_UI_SPEC.md` for the monitor UI contract and
 hardware acceptance checkpoints. Build size and HEX hash must be recorded only
 after the final successful rebuild.
 
@@ -90,14 +119,16 @@ after the final successful rebuild.
 - Keil MDK ArmClang: 6.24
 - Device pack: `GigaDevice.GD32E23x_DFP 1.1.0`
 - Result: `0 Error(s), 0 Warning(s)`
-- Program: 15774 bytes code, 7614 bytes RO data
-- ROM image: 23388 bytes (22.84 KB)
-- RAM: 20 bytes RW data, 4628 bytes ZI data (4648 bytes / 4.54 KB total)
-- Maximum analyzed stack: 768 bytes plus untraceable function pointers
-- HEX SHA-256: `2ED0FC9C08104E87A32BAB338A7EECB7D875BBD592BD08A56457BA29D2865D74`
+- Program: 17282 bytes code, 7654 bytes RO data
+- ROM image: 24936 bytes (24.35 KB)
+- Static RAM: 20 bytes RW data, 5948 bytes ZI data (5968 bytes / 5.83 KB)
+- Maximum analyzed stack: 896 bytes plus untraceable function pointers
+- Static RAM plus analyzed stack: 6864 bytes, leaving 1328 bytes of the 8 KB
+  SRAM before untraceable call and interrupt-stack overhead
+- HEX SHA-256: `F8274783B2F74168924B144ACCB297ED3B3EA5B951F9D4A41C936DB7AF1032BA`
 
 These figures come from the final full rebuild in
-`Project/Demo14_Square_Chinese_Fix_rebuild.log`. Physical-board acceptance is still
+`Project/Objects/Demo14_HESS_ECG_Analyzer.build_log.htm`. Physical-board acceptance is still
 required for TFT refresh/flicker, key polarity and double-click timing, PA3
 scaling, lead-off/clipping behavior, realistic ECG noise, PA2 output frequency,
 PA6 input-capture polarity, and the loopback timeout.

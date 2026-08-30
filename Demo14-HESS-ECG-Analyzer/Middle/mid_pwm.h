@@ -5,7 +5,7 @@
 
 #define PWM_ON             0x01U
 #define PWM_OFF            0x02U
-#define PWM_TIMER_FREQ_HZ  1000000U
+#define PWM_TIMER_FREQ_HZ  10000U
 
 void set_pwm_duty(uint16_t pwm_duty);
 uint16_t get_pwm_duty(void);

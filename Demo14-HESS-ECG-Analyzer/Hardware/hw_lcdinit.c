@@ -82,6 +82,24 @@ void TFT_WriteColorBurst(uint16_t color, uint32_t count)
     gpio_bit_write(LCD_CS_GPIO_Port, LCD_CS_Pin, SET);
 }
 
+void TFT_WritePixels(const uint16_t *colors, uint16_t count)
+{
+    if ((colors == (const uint16_t *)0) || (count == 0U))
+    {
+        return;
+    }
+    gpio_bit_write(LCD_DC_GPIO_Port, LCD_DC_Pin, SET);
+    gpio_bit_write(LCD_CS_GPIO_Port, LCD_CS_Pin, RESET);
+    while (count-- != 0U)
+    {
+        uint16_t color = *colors++;
+        tft_write_byte((uint8_t)(color >> 8));
+        tft_write_byte((uint8_t)color);
+    }
+    tft_wait_idle();
+    gpio_bit_write(LCD_CS_GPIO_Port, LCD_CS_Pin, SET);
+}
+
 void TFT_Address_Set(uint16_t x1,uint16_t y1,uint16_t x2,uint16_t y2)
 {
 	TFT_WR_REG(0x2a);//列地址设置

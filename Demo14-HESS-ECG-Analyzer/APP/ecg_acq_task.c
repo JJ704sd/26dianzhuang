@@ -13,7 +13,7 @@
 
 static const uint16_t pwm_frequency_presets[ECG_PWM_PRESET_COUNT] =
 {
-    100U, 250U, 500U, 1000U, 2000U
+    1U, 2U, 5U, 10U, 20U
 };
 
 static ecg_acq_core_t acquisition_core;
@@ -28,11 +28,14 @@ static volatile uint16_t measured_bpm;
 static volatile uint16_t latest_rr_ms;
 static volatile uint16_t rmssd_ms;
 static volatile uint8_t signal_quality;
+static int8_t fast_wave_samples[ECG_DISPLAY_WAVE_WINDOW_SAMPLES];
+static uint16_t fast_wave_count;
+static uint8_t fast_wave_span;
 static uint8_t sample_tick_ms;
 static uint8_t gain = 1U;
 static uint8_t window_seconds = 5U;
 static ecg_monitor_page_t current_page = ECG_MONITOR_PAGE;
-static uint8_t pwm_preset_index = 3U;
+static uint8_t pwm_preset_index = 1U;
 static volatile uint8_t running;
 static volatile uint8_t active;
 
@@ -61,6 +64,10 @@ static void ecg_acq_show_frequency_ui(void)
     view.running = running;
     view.gain = gain;
     view.window_seconds = window_seconds;
+    view.timebase_ms = 0U;
+    view.fit_limited = 0U;
+    view.wave_frame_ready = 0U;
+    view.wave_span = 0U;
     view.event_marker_valid = 0U;
     view.event_marker_x = 0U;
     view.pwm_enabled = (get_pwm_state() == PWM_ON) ? 1U : 0U;
@@ -88,39 +95,10 @@ static void ecg_acq_reset_measurement(void)
     latest_rr_ms = 0U;
     rmssd_ms = 0U;
     signal_quality = ECG_SIGNAL_WAIT;
+    fast_wave_count = 0U;
+    fast_wave_span = 0U;
     sample_tick_ms = 0U;
     buffer_sequence++;
-}
-
-static int16_t ecg_acq_plot_y(int8_t packed_sample,
-                              uint8_t gain_snapshot,
-                              int16_t plot_y0,
-                              int16_t plot_y1,
-                              int16_t plot_center_y,
-                              int16_t plot_half_height)
-{
-    int32_t scaled = (int32_t)packed_sample * gain_snapshot;
-    int16_t y;
-
-    if (scaled > 127)
-    {
-        scaled = 127;
-    }
-    else if (scaled < -128)
-    {
-        scaled = -128;
-    }
-    y = (int16_t)(plot_center_y -
-                  ((scaled * plot_half_height) / 128));
-    if (y < plot_y0)
-    {
-        y = plot_y0;
-    }
-    else if (y > plot_y1)
-    {
-        y = plot_y1;
-    }
-    return y;
 }
 
 static void ecg_acq_sample(void)
@@ -155,7 +133,7 @@ void ECGAcq_Init(void)
     gain = 1U;
     window_seconds = 5U;
     current_page = ECG_MONITOR_PAGE;
-    pwm_preset_index = 3U;
+    pwm_preset_index = 1U;
     set_pwm_state(PWM_OFF);
     ecg_acq_apply_pwm_preset();
     buffer_sequence = 0U;
@@ -203,6 +181,8 @@ void ECGAcq_ShowUI(void)
 {
     ecg_monitor_view_t view;
     int16_t plot[ECG_ACQ_MAX_PLOT_POINTS];
+    int8_t display_samples[ECG_ACQ_MAX_PLOT_POINTS];
+    const int8_t *samples_for_plot;
     uint16_t i;
     uint16_t index;
     uint16_t offset;
@@ -221,6 +201,7 @@ void ECGAcq_ShowUI(void)
     int16_t plot_half_height;
     uint16_t width;
     uint16_t needed;
+    uint16_t display_count;
 
     if (active == 0U)
     {
@@ -253,6 +234,12 @@ void ECGAcq_ShowUI(void)
         view.running = running;
         view.gain = gain;
         view.window_seconds = window_seconds;
+        view.timebase_ms = (view.page == ECG_WAVE_PAGE) ?
+                           ECG_DISPLAY_WAVE_WINDOW_MS :
+                           (uint16_t)((uint16_t)window_seconds * 1000U);
+        view.fit_limited = 0U;
+        view.wave_frame_ready = 0U;
+        view.wave_span = 0U;
 
         if (view.page == ECG_WAVE_PAGE)
         {
@@ -275,22 +262,64 @@ void ECGAcq_ShowUI(void)
         width = (uint16_t)(plot_x1 - plot_x0 + 1U);
         needed = (uint16_t)((uint16_t)view.window_seconds *
                             ECG_ACQ_SAMPLE_RATE_HZ);
-        for (i = 0U; i < width; ++i)
+        display_count = 0U;
+        samples_for_plot = display_samples;
+        if (view.page == ECG_WAVE_PAGE)
         {
-            offset = (uint16_t)(((uint32_t)(width - 1U - i) *
-                                (needed - 1U)) / (width - 1U));
-            if (offset < count_snapshot)
+            if (view.running != 0U)
             {
-                index = (uint16_t)((head_snapshot + ECG_ACQ_BUFFER_SIZE - 1U -
-                                    offset) % ECG_ACQ_BUFFER_SIZE);
-                plot[i] = ecg_acq_plot_y(sample_buffer[index], view.gain,
-                                         plot_y0, plot_y1, plot_center_y,
-                                         plot_half_height);
+                uint8_t captured_span = 0U;
+                uint16_t captured = ADC_StreamCopyLatestDisplay(
+                    fast_wave_samples, ECG_DISPLAY_WAVE_WINDOW_SAMPLES,
+                    &captured_span);
+                if (captured != 0U)
+                {
+                    fast_wave_count = captured;
+                    fast_wave_span = captured_span;
+                }
             }
-            else
+            display_count = fast_wave_count;
+            samples_for_plot = fast_wave_samples;
+            view.wave_frame_ready = (display_count >= 2U) ? 1U : 0U;
+            view.wave_span = fast_wave_span;
+            if (display_count < 2U)
             {
-                plot[i] = plot_center_y;
+                /* Analysis quality belongs to the 250 Hz path.  Until the
+                   independent WAVE DMA has delivered a frame, do not label a
+                   synthetic center line as a valid live waveform. */
+                view.quality = ECG_SIGNAL_WAIT;
             }
+        }
+        else
+        {
+            display_count = width;
+            for (i = 0U; i < width; ++i)
+            {
+                offset = (uint16_t)(((uint32_t)(width - 1U - i) *
+                                    (needed - 1U)) / (width - 1U));
+                if (offset < count_snapshot)
+                {
+                    index = (uint16_t)((head_snapshot + ECG_ACQ_BUFFER_SIZE -
+                                        1U - offset) % ECG_ACQ_BUFFER_SIZE);
+                    display_samples[i] = sample_buffer[index];
+                }
+                else
+                {
+                    display_samples[i] = 0;
+                }
+            }
+        }
+        if (display_count >= 2U)
+        {
+            view.fit_limited = ECGAcqCore_MapDisplaySamples(
+                samples_for_plot, display_count, view.gain,
+                (view.page == ECG_WAVE_PAGE) ? 1U : 0U,
+                plot_y0, plot_y1, plot_center_y, plot_half_height,
+                plot, width);
+        }
+        else
+        {
+            for (i = 0U; i < width; ++i) { plot[i] = plot_center_y; }
         }
         sequence_after = buffer_sequence;
     } while ((sequence_before != sequence_after) ||
@@ -301,7 +330,8 @@ void ECGAcq_ShowUI(void)
         view.pwm_enabled = 0U;
         view.pwm_target_hz = 0U;
         view.pwm_measured_hz = 0U;
-    if ((marker_valid_snapshot != 0U) &&
+    if ((view.page == ECG_MONITOR_PAGE) &&
+        (marker_valid_snapshot != 0U) &&
         (samples_snapshot >= marker_snapshot) &&
         ((samples_snapshot - marker_snapshot) < needed))
     {

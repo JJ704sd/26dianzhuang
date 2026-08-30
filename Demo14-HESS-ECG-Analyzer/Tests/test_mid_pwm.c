@@ -79,9 +79,17 @@ void gpio_bit_reset(uint32_t port, uint32_t pin)
 
 int main(void)
 {
+    set_pwm_period(10000U);
+    require(hardware_arr == 9999U && get_pwm_out_freq() == 1U,
+            "10000 timer ticks must produce the 1 Hz self-test output");
+
+    set_pwm_period(5000U);
+    require(hardware_arr == 4999U && get_pwm_out_freq() == 2U,
+            "5000 timer ticks must produce the 2 Hz self-test output");
+
     set_pwm_period(1000U);
     require(hardware_arr == 999U, "1000 ticks must program ARR=999");
-    require(get_pwm_out_freq() == 1000U, "reported PWM frequency mismatch");
+    require(get_pwm_out_freq() == 10U, "reported PWM frequency mismatch");
 
     set_pwm_duty(1200U);
     require(get_pwm_duty() == 1000U && hardware_compare == 1000U,
@@ -93,8 +101,8 @@ int main(void)
 
     set_pwm_period(500U);
     set_pwm_duty(250U);
-    require(get_pwm_out_freq() == 2000U && hardware_compare == 250U,
-            "2000 Hz at 50 percent configuration mismatch");
+    require(get_pwm_out_freq() == 20U && hardware_compare == 250U,
+            "20 Hz at 50 percent configuration mismatch");
 
     update_events = 0U;
     pa2_mode = 0U;

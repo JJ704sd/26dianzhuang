@@ -22,6 +22,10 @@ typedef struct
     uint8_t running;
     uint8_t gain;
     uint8_t window_seconds;
+    uint16_t timebase_ms;
+    uint8_t fit_limited;
+    uint8_t wave_frame_ready;
+    uint8_t wave_span;
     uint8_t event_marker_valid;
     uint16_t event_marker_x;
     uint8_t pwm_enabled;

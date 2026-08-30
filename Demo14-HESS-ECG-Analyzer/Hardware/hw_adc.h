@@ -5,5 +5,6 @@
 
 void mx_adc_init(void);
 void mx_adc_dma_init(uint32_t adc_value,uint32_t number);
+void mx_adc_scope_dma_init(uint32_t adc_value, uint32_t number);
 
 #endif

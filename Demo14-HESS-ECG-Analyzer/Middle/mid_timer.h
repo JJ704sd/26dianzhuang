@@ -5,7 +5,7 @@
 
 #define PAUSE_MS_TIMER 0x01
 #define RUN_MS_TIMER   0x02
-#define FREQ_SIGNAL_TIMEOUT_MS 1500U
+#define FREQ_SIGNAL_TIMEOUT_MS 2500U
 
 uint32_t get_runtime_ms(void);
 

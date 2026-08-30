@@ -1,8 +1,13 @@
 #include "mid_adc.h"
+#include "hw_adc.h"
 #include "stdio.h"
 #include "string.h"
 
 static volatile uint8_t adc_convert_bit = ADC_CONVERT_UN_FINSIH;
+static volatile uint16_t adc_scope_buffer[ADC_SCOPE_DMA_SAMPLES];
+static volatile uint16_t adc_scope_ready_offset;
+static volatile uint8_t adc_scope_ready_sequence;
+static volatile uint8_t adc_scope_ready;
 
 /*
  * 函数内容：冒泡排序
@@ -46,10 +51,68 @@ static uint16_t Get_ADC_Val(void)
 	return val;
 }
 
-/* Read the latest result from the continuously running ADC without waiting. */
+/* Read the latest result from the TIMER0-triggered ADC without waiting. */
 uint16_t Get_ADC_Latest(void)
 {
 	return adc_regular_data_read();
+}
+
+void ADC_StreamInit(void)
+{
+    adc_scope_ready_offset = 0U;
+    adc_scope_ready_sequence = 0U;
+    adc_scope_ready = 0U;
+    mx_adc_scope_dma_init((uint32_t)adc_scope_buffer,
+                          ADC_SCOPE_DMA_SAMPLES);
+}
+
+uint16_t ADC_StreamCopyLatestDisplay(int8_t *destination, uint16_t capacity,
+                                     uint8_t *frame_span)
+{
+    uint16_t i;
+    uint16_t offset;
+    uint8_t sequence_before;
+    uint8_t sequence_after;
+    int16_t minimum;
+    int16_t maximum;
+
+    if (frame_span != (uint8_t *)0)
+    {
+        *frame_span = 0U;
+    }
+
+    if ((destination == (int8_t *)0) ||
+        (capacity < ADC_SCOPE_HALF_SAMPLES) ||
+        (adc_scope_ready == 0U))
+    {
+        return 0U;
+    }
+    do
+    {
+        sequence_before = adc_scope_ready_sequence;
+        offset = adc_scope_ready_offset;
+        minimum = 127;
+        maximum = -128;
+        for (i = 0U; i < ADC_SCOPE_HALF_SAMPLES; ++i)
+        {
+            int32_t centered = (int32_t)adc_scope_buffer[offset + i] - 2048;
+            int16_t display_sample;
+
+            centered /= 16;
+            if (centered > 127) { centered = 127; }
+            if (centered < -128) { centered = -128; }
+            display_sample = (int16_t)centered;
+            destination[i] = (int8_t)display_sample;
+            if (display_sample < minimum) { minimum = display_sample; }
+            if (display_sample > maximum) { maximum = display_sample; }
+        }
+        sequence_after = adc_scope_ready_sequence;
+    } while (sequence_before != sequence_after);
+    if (frame_span != (uint8_t *)0)
+    {
+        *frame_span = (uint8_t)(maximum - minimum);
+    }
+    return ADC_SCOPE_HALF_SAMPLES;
 }
 
 /*
@@ -96,10 +159,20 @@ void Set_ADC_Channel(uint8_t channel)
  */
 void DMA_Channel0_IRQHandler(void)
 {
+	if(dma_interrupt_flag_get(DMA_CH0, DMA_INT_FLAG_HTF)){
+        adc_scope_ready_sequence++;
+        adc_scope_ready_offset = 0U;
+        adc_scope_ready = 1U;
+        adc_scope_ready_sequence++;
+        dma_interrupt_flag_clear(DMA_CH0, DMA_INT_FLAG_HTF);
+    }
 	if(dma_interrupt_flag_get(DMA_CH0, DMA_INT_FLAG_FTF)){
+        adc_scope_ready_sequence++;
+        adc_scope_ready_offset = ADC_SCOPE_HALF_SAMPLES;
+        adc_scope_ready = 1U;
 		adc_convert_bit = ADC_CONVERT_FINSIH;
-		dma_channel_disable(DMA_CH0);	//关闭dma
-		dma_interrupt_flag_clear(DMA_CH0, DMA_INT_FLAG_G);	//清除中断标志位
+        adc_scope_ready_sequence++;
+		dma_interrupt_flag_clear(DMA_CH0, DMA_INT_FLAG_FTF);
 	}
 }
 

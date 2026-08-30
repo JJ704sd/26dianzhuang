@@ -15,6 +15,7 @@
 
 static ecg_monitor_view_t previous_view;
 static int16_t previous_plot[ECG_MAX_PLOT_POINTS];
+static uint16_t plot_scanline[ECG_MAX_PLOT_POINTS];
 static uint16_t previous_plot_count;
 static uint8_t previous_view_valid;
 static uint8_t previous_plot_valid;
@@ -99,40 +100,72 @@ static void ecg_monitor_draw_grid(uint16_t x0, uint16_t x1,
     TFT_Fill(x1, y0, (uint16_t)(x1 + 1U), (uint16_t)(y1 + 1U), DARKBLUE);
 }
 
-static void ecg_monitor_draw_trace(const int16_t *plot_y,
-                                   uint16_t plot_count,
-                                   uint16_t x0, uint16_t x1,
-                                   uint16_t y0, uint16_t y1,
-                                   uint16_t color)
+static void ecg_monitor_draw_plot_scanlines(const ecg_monitor_view_t *view,
+                                            const int16_t *plot_y,
+                                            uint16_t plot_count,
+                                            uint16_t x0, uint16_t x1,
+                                            uint16_t y0, uint16_t y1,
+                                            uint16_t center_y)
 {
-    uint16_t i;
     uint16_t width = (uint16_t)(x1 - x0 + 1U);
+    uint16_t y;
 
     if (plot_count < width)
     {
         width = plot_count;
     }
-    for (i = 1U; i < width; ++i)
+    for (y = y0; y <= y1; ++y)
     {
-        TFT_DrawLine((uint16_t)(x0 + i - 1U),
-                     (uint16_t)ecg_monitor_clamp_y(plot_y[i - 1U], y0, y1),
-                     (uint16_t)(x0 + i),
-                     (uint16_t)ecg_monitor_clamp_y(plot_y[i], y0, y1),
-                     color);
-    }
-}
+        uint16_t i;
+        for (i = 0U; i < width; ++i)
+        {
+            uint16_t x = (uint16_t)(x0 + i);
+            uint16_t color = BLACK;
+            uint16_t current_y = (uint16_t)ecg_monitor_clamp_y(
+                plot_y[i], y0, y1);
+            uint8_t on_trace = (y == current_y) ? 1U : 0U;
 
-static void ecg_monitor_draw_marker(const ecg_monitor_view_t *view,
-                                    uint16_t x0, uint16_t x1,
-                                    uint16_t y0, uint16_t y1,
-                                    uint16_t color)
-{
-    if ((view->event_marker_valid != 0U) &&
-        (view->event_marker_x >= x0) &&
-        (view->event_marker_x <= x1))
-    {
-        TFT_DrawLine(view->event_marker_x, y0,
-                     view->event_marker_x, y1, color);
+            if ((((x - x0) % ECG_GRID_MINOR_X) == 0U) &&
+                (((y - y0) % ECG_GRID_MINOR_Y) == 0U))
+            {
+                color = DARKBLUE;
+            }
+            if ((((x - x0) % ECG_GRID_MAJOR_X) == 0U) ||
+                (((y - y0) % ECG_GRID_MAJOR_Y) == 0U))
+            {
+                color = DARKBLUE;
+            }
+            if (y == center_y)
+            {
+                color = GRAYBLUE;
+            }
+            if ((x == x0) || (x == x1) || (y == y0) || (y == y1))
+            {
+                color = DARKBLUE;
+            }
+            if (i != 0U)
+            {
+                uint16_t previous_y = (uint16_t)ecg_monitor_clamp_y(
+                    plot_y[i - 1U], y0, y1);
+                uint16_t top = (previous_y < current_y) ? previous_y : current_y;
+                uint16_t bottom = (previous_y > current_y) ? previous_y : current_y;
+                if ((y >= top) && (y <= bottom))
+                {
+                    on_trace = 1U;
+                }
+            }
+            if (on_trace != 0U)
+            {
+                color = GREEN;
+            }
+            if ((view->event_marker_valid != 0U) &&
+                (x == view->event_marker_x))
+            {
+                color = RED;
+            }
+            plot_scanline[i] = color;
+        }
+        TFT_DrawPixelRow(x0, y, plot_scanline, width);
     }
 }
 
@@ -179,16 +212,10 @@ static void ecg_monitor_update_plot(const ecg_monitor_view_t *view,
         return;
     }
 
-    if ((previous_plot_valid != 0U) &&
-        (previous_view.page == view->page))
-    {
-        ecg_monitor_draw_trace(previous_plot, previous_plot_count,
-                               x0, x1, y0, y1, BLACK);
-        ecg_monitor_draw_marker(&previous_view, x0, x1, y0, y1, BLACK);
-        ecg_monitor_draw_grid(x0, x1, y0, y1, center_y);
-    }
-    ecg_monitor_draw_trace(plot_y, plot_count, x0, x1, y0, y1, GREEN);
-    ecg_monitor_draw_marker(view, x0, x1, y0, y1, RED);
+    /* Compose final pixels row by row so the panel never exposes an all-black
+       intermediate frame and each scanline uses only one address window. */
+    ecg_monitor_draw_plot_scanlines(view, plot_y, plot_count,
+                                    x0, x1, y0, y1, center_y);
 
     for (i = 0U; i < plot_count; ++i)
     {
@@ -294,13 +321,15 @@ static void ecg_monitor_render_overview(const ecg_monitor_view_t *view,
     }
     if ((previous_view_valid == 0U) ||
         (previous_view.gain != view->gain) ||
+        (previous_view.fit_limited != view->fit_limited) ||
         (previous_view.window_seconds != view->window_seconds) ||
         (previous_view.event_marker_valid != view->event_marker_valid))
     {
         TFT_Fill(0U, 112U, ECG_SCREEN_X_END, ECG_SCREEN_Y_END, BLACK);
         TFT_ShowChinese(2U, 114U, (uint8_t *)text_amplitude,
                         WHITE, BLACK, 12U, 0U);
-        sprintf(text, "x%u %2us %s", (unsigned int)display_gain,
+        sprintf(text, "x%u%s %2us %s", (unsigned int)display_gain,
+                (view->fit_limited != 0U) ? "F" : " ",
                 (unsigned int)display_window,
                 (view->event_marker_valid != 0U) ? "EVT" : "   ");
         TFT_ShowString(28U, 112U, (const uint8_t *)text,
@@ -314,8 +343,6 @@ static void ecg_monitor_render_wave(const ecg_monitor_view_t *view,
 {
     char text[21];
     uint8_t display_gain = (view->gain > 9U) ? 9U : view->gain;
-    uint8_t display_window = (view->window_seconds > 99U) ?
-                             99U : view->window_seconds;
 
     if ((previous_view_valid == 0U) ||
         (previous_view.bpm != view->bpm) ||
@@ -351,16 +378,34 @@ static void ecg_monitor_render_wave(const ecg_monitor_view_t *view,
     if ((previous_view_valid == 0U) ||
         (previous_view.quality != view->quality) ||
         (previous_view.gain != view->gain) ||
-        (previous_view.window_seconds != view->window_seconds) ||
+        (previous_view.timebase_ms != view->timebase_ms) ||
+        (previous_view.fit_limited != view->fit_limited) ||
+        (previous_view.wave_frame_ready != view->wave_frame_ready) ||
+        (previous_view.wave_span != view->wave_span) ||
         (previous_view.event_marker_valid != view->event_marker_valid))
     {
         TFT_Fill(0U, 112U, ECG_SCREEN_X_END, ECG_SCREEN_Y_END, BLACK);
         TFT_ShowChinese(0U, 114U, (uint8_t *)text_status,
                         ecg_monitor_quality_color(view->quality),
                         BLACK, 12U, 0U);
-        sprintf(text, "%-8s x%u %2us",
-                ecg_monitor_quality_text(view->quality),
-                (unsigned int)display_gain, (unsigned int)display_window);
+        if (view->wave_frame_ready == 0U)
+        {
+            sprintf(text, "DMA WAIT x%u %ums", (unsigned int)display_gain,
+                    (unsigned int)view->timebase_ms);
+        }
+        else if (view->wave_span < 2U)
+        {
+            sprintf(text, "FLAT    x%u %ums", (unsigned int)display_gain,
+                    (unsigned int)view->timebase_ms);
+        }
+        else
+        {
+            sprintf(text, "%-8s x%u%s %ums",
+                    ecg_monitor_quality_text(view->quality),
+                    (unsigned int)display_gain,
+                    (view->fit_limited != 0U) ? "F" : " ",
+                    (unsigned int)view->timebase_ms);
+        }
         TFT_ShowString(26U, 112U, (const uint8_t *)text,
                        ecg_monitor_quality_color(view->quality),
                        BLACK, 16U, 0U);
@@ -496,7 +541,7 @@ void ECGMonitorUI_DrawStatic(ecg_monitor_page_t page)
                               (uint16_t)ECG_WAVE_PLOT_CENTER_Y);
         TFT_ShowChinese(0U, 114U, (uint8_t *)text_status,
                         YELLOW, BLACK, 12U, 0U);
-        TFT_ShowString(26U, 112U, (const uint8_t *)"WAIT x1  5s",
+        TFT_ShowString(26U, 112U, (const uint8_t *)"DMA WAIT x1 5ms",
                        YELLOW, BLACK, 16U, 0U);
         return;
     }

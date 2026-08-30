@@ -34,6 +34,17 @@ void TFT_DrawPoint(uint16_t x,uint16_t y, uint16_t color)
     TFT_WR_DATA(color);
 }
 
+void TFT_DrawPixelRow(uint16_t x, uint16_t y, const uint16_t *colors,
+                      uint16_t count)
+{
+    if ((colors == (const uint16_t *)0) || (count == 0U))
+    {
+        return;
+    }
+    TFT_Address_Set(x, y, (uint16_t)(x + count - 1U), y);
+    TFT_WritePixels(colors, count);
+}
+
 /*
 *   函数内容：  画线
 *   函数参数：  x1,y1   起始坐标

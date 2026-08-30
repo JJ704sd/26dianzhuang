@@ -17,6 +17,8 @@
 
 static uint32_t fill_pixels;
 static uint32_t drawn_pixels;
+static uint32_t address_windows;
+static char last_bottom_text[32];
 
 void TFT_Fill(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1,
               uint16_t color)
@@ -27,6 +29,7 @@ void TFT_Fill(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1,
     CHECK(x1 <= 160U);
     CHECK(y1 <= 128U);
     fill_pixels += (uint32_t)(x1 - x0) * (uint32_t)(y1 - y0);
+    address_windows++;
 }
 
 void TFT_DrawPoint(uint16_t x, uint16_t y, uint16_t color)
@@ -35,6 +38,7 @@ void TFT_DrawPoint(uint16_t x, uint16_t y, uint16_t color)
     CHECK(x < 160U);
     CHECK(y < 128U);
     drawn_pixels++;
+    address_windows++;
 }
 
 void TFT_DrawLine(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1,
@@ -49,6 +53,19 @@ void TFT_DrawLine(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1,
     CHECK(y0 < 128U);
     CHECK(y1 < 128U);
     drawn_pixels += (uint32_t)((dx > dy) ? dx : dy) + 1U;
+    /* The production line primitive opens one LCD address window per pixel. */
+    address_windows += (uint32_t)((dx > dy) ? dx : dy) + 1U;
+}
+
+void TFT_DrawPixelRow(uint16_t x, uint16_t y, const uint16_t *colors,
+                      uint16_t count)
+{
+    CHECK(colors != NULL);
+    CHECK(count != 0U);
+    CHECK((uint32_t)x + count <= 160U);
+    CHECK(y < 128U);
+    drawn_pixels += count;
+    address_windows++;
 }
 
 void TFT_ShowString(uint16_t x, uint16_t y, const uint8_t *text,
@@ -63,6 +80,10 @@ void TFT_ShowString(uint16_t x, uint16_t y, const uint8_t *text,
     CHECK((uint32_t)x + ((uint32_t)length * (size / 2U)) <= 160U);
     CHECK((uint32_t)y + size <= 128U);
     drawn_pixels += (uint32_t)length * (uint32_t)(size / 2U) * size;
+    if (y >= 112U)
+    {
+        snprintf(last_bottom_text, sizeof(last_bottom_text), "%s", text);
+    }
 }
 
 void TFT_ShowChinese(uint16_t x, uint16_t y, uint8_t *text,
@@ -94,7 +115,7 @@ static void make_plot(int16_t *plot, uint16_t count, int16_t center)
     }
 }
 
-static void test_dynamic_refresh_avoids_large_clears(void)
+static void test_dynamic_refresh_has_bounded_spi_work(void)
 {
     ecg_monitor_view_t view = {0};
     int16_t plot[ECG_WAVE_PLOT_X1 - ECG_WAVE_PLOT_X0 + 1U];
@@ -105,33 +126,52 @@ static void test_dynamic_refresh_avoids_large_clears(void)
     view.running = 1U;
     view.gain = 1U;
     view.window_seconds = 5U;
+    view.timebase_ms = 5U;
+    view.fit_limited = 1U;
+    view.wave_frame_ready = 1U;
+    view.wave_span = 0U;
     make_plot(plot, (uint16_t)(sizeof(plot) / sizeof(plot[0])),
               ECG_WAVE_PLOT_CENTER_Y);
 
     ECGMonitorUI_DrawStatic(view.page);
     fill_pixels = 0U;
     drawn_pixels = 0U;
+    address_windows = 0U;
     ECGMonitorUI_Render(&view, plot,
                         (uint16_t)(sizeof(plot) / sizeof(plot[0])));
     first_fill = fill_pixels;
+    CHECK(strstr(last_bottom_text, "FLAT") != NULL);
+
+    view.wave_frame_ready = 0U;
+    ECGMonitorUI_Render(&view, plot,
+                        (uint16_t)(sizeof(plot) / sizeof(plot[0])));
+    CHECK(strstr(last_bottom_text, "DMA WAIT") != NULL);
+
+    view.wave_frame_ready = 1U;
+    view.wave_span = 40U;
+    ECGMonitorUI_Render(&view, plot,
+                        (uint16_t)(sizeof(plot) / sizeof(plot[0])));
 
     plot[40] = (int16_t)(plot[40] - 8);
     fill_pixels = 0U;
     drawn_pixels = 0U;
+    address_windows = 0U;
     ECGMonitorUI_Render(&view, plot,
                         (uint16_t)(sizeof(plot) / sizeof(plot[0])));
 
-    CHECK(first_fill < 15000U);
-    CHECK(fill_pixels < 3000U);
-    CHECK((fill_pixels + drawn_pixels) < 6000U);
-    printf("UI work: initial fills=%lu, changed-frame fills=%lu, total=%lu\n",
+    printf("UI work: initial fills=%lu, changed-frame fills=%lu, total=%lu, windows=%lu\n",
            (unsigned long)first_fill, (unsigned long)fill_pixels,
-           (unsigned long)(fill_pixels + drawn_pixels));
+           (unsigned long)(fill_pixels + drawn_pixels),
+           (unsigned long)address_windows);
+    CHECK(first_fill < 24000U);
+    CHECK(fill_pixels < 20000U);
+    CHECK((fill_pixels + drawn_pixels) < 21000U);
+    CHECK(address_windows < 160U);
 }
 
 int main(void)
 {
-    test_dynamic_refresh_avoids_large_clears();
-    puts("ecg_monitor_ui incremental refresh tests passed");
+    test_dynamic_refresh_has_bounded_spi_work();
+    puts("ecg_monitor_ui bounded refresh tests passed");
     return EXIT_SUCCESS;
 }

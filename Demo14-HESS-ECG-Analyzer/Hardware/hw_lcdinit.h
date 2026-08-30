@@ -18,6 +18,7 @@ void TFT_WR_DATA8(uint8_t data);
 void TFT_WR_DATA(uint16_t data);
 void TFT_WR_REG(uint8_t reg);
 void TFT_WriteColorBurst(uint16_t color, uint32_t count);
+void TFT_WritePixels(const uint16_t *colors, uint16_t count);
 void TFT_Address_Set(uint16_t x1,uint16_t y1,uint16_t x2,uint16_t y2);
 void TFT_Init(void);
 

@@ -183,6 +183,66 @@ static void test_display_sample_preserves_square_wave_levels(void)
     CHECK(ECGAcqCore_DisplaySample(5000U) == 127);
 }
 
+static void test_high_rate_waveform_mapping_preserves_shape_and_margin(void)
+{
+    int8_t square_samples[200];
+    int8_t small_sine_samples[16] =
+        {0, 7, 10, 7, 0, -7, -10, -7, 0, 7, 10, 7, 0, -7, -10, -7};
+    int16_t plot[156];
+    int16_t small_x1[16];
+    int16_t small_x4[16];
+    int8_t full_range[16];
+    int16_t full_plot[16];
+    int16_t min_y = 127;
+    int16_t max_y = 0;
+    uint16_t transitions = 0U;
+    uint16_t i;
+    uint8_t fit_limited;
+
+    CHECK(ECG_DISPLAY_SAMPLE_RATE_HZ >= 40000U);
+    CHECK(ECG_DISPLAY_WAVE_WINDOW_SAMPLES == 200U);
+    for (i = 0U; i < 200U; ++i)
+    {
+        square_samples[i] = (((i + 10U) % 20U) < 10U) ? 77 : -77;
+    }
+    fit_limited = ECGAcqCore_MapDisplaySamples(
+        square_samples, 200U, 4U, 1U, 17, 109, 63, 44, plot, 156U);
+    CHECK(fit_limited == 1U);
+    CHECK(plot[0] < 63);
+    for (i = 0U; i < 156U; ++i)
+    {
+        CHECK(plot[i] >= 19);
+        CHECK(plot[i] <= 107);
+        if (plot[i] < min_y) { min_y = plot[i]; }
+        if (plot[i] > max_y) { max_y = plot[i]; }
+        if ((i > 0U) && (plot[i] != plot[i - 1U])) { transitions++; }
+    }
+    CHECK((max_y - min_y) >= 80);
+    CHECK(transitions >= 18U);
+
+    ECGAcqCore_MapDisplaySamples(small_sine_samples, 16U, 1U, 0U,
+                                 17, 109, 63, 44, small_x1, 16U);
+    ECGAcqCore_MapDisplaySamples(small_sine_samples, 16U, 4U, 0U,
+                                 17, 109, 63, 44, small_x4, 16U);
+    CHECK((small_x4[6] - small_x4[2]) >
+          (small_x1[6] - small_x1[2]));
+    for (i = 0U; i < 16U; ++i)
+    {
+        CHECK(small_x4[i] >= 19);
+        CHECK(small_x4[i] <= 107);
+        full_range[i] = ((i & 1U) == 0U) ? -128 : 127;
+    }
+    fit_limited = ECGAcqCore_MapDisplaySamples(
+        full_range, 16U, 4U, 0U, 17, 109, 63, 44, full_plot, 16U);
+    CHECK(fit_limited == 1U);
+    for (i = 0U; i < 16U; ++i)
+    {
+        CHECK(full_plot[i] >= 19);
+        CHECK(full_plot[i] <= 107);
+    }
+    CHECK((full_plot[0] - full_plot[1]) >= 80);
+}
+
 int main(void)
 {
     test_init_and_quality_labels();
@@ -192,6 +252,7 @@ int main(void)
     test_variable_rr_intervals_produce_rmssd();
     test_stale_heart_rate_becomes_unavailable();
     test_display_sample_preserves_square_wave_levels();
+    test_high_rate_waveform_mapping_preserves_shape_and_margin();
     puts("ecg_acq_core tests passed");
     return EXIT_SUCCESS;
 }

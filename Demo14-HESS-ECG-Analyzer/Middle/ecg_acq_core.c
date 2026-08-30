@@ -255,6 +255,102 @@ int8_t ECGAcqCore_DisplaySample(uint16_t adc_sample)
     return (int8_t)centered;
 }
 
+uint8_t ECGAcqCore_MapDisplaySamples(const int8_t *samples,
+                                     uint16_t sample_count,
+                                     uint8_t requested_gain,
+                                     uint8_t rising_trigger,
+                                     int16_t plot_y0,
+                                     int16_t plot_y1,
+                                     int16_t plot_center_y,
+                                     int16_t plot_half_height,
+                                     int16_t *plot_y,
+                                     uint16_t plot_count)
+{
+    int16_t minimum;
+    int16_t maximum;
+    int16_t sample_center;
+    int16_t peak_span;
+    int16_t usable_half;
+    int32_t scale_q8;
+    int32_t fit_scale_q8;
+    uint16_t i;
+    uint16_t trigger_index = 0U;
+    uint8_t fit_limited = 0U;
+
+    if ((samples == (const int8_t *)0) ||
+        (plot_y == (int16_t *)0) ||
+        (sample_count == 0U) || (plot_count == 0U))
+    {
+        return 0U;
+    }
+    if (requested_gain == 0U)
+    {
+        requested_gain = 1U;
+    }
+
+    minimum = samples[0];
+    maximum = samples[0];
+    for (i = 1U; i < sample_count; ++i)
+    {
+        if (samples[i] < minimum) { minimum = samples[i]; }
+        if (samples[i] > maximum) { maximum = samples[i]; }
+    }
+    sample_center = (int16_t)(((int32_t)minimum + maximum) / 2);
+    peak_span = (int16_t)(maximum - sample_center);
+    if ((sample_center - minimum) > peak_span)
+    {
+        peak_span = (int16_t)(sample_center - minimum);
+    }
+    if ((rising_trigger != 0U) && (peak_span >= 2))
+    {
+        for (i = 1U; i < sample_count; ++i)
+        {
+            if ((samples[i - 1U] <= sample_center) &&
+                (samples[i] > sample_center))
+            {
+                trigger_index = i;
+                break;
+            }
+        }
+    }
+
+    usable_half = plot_half_height;
+    if ((plot_center_y - plot_y0) < usable_half)
+    {
+        usable_half = (int16_t)(plot_center_y - plot_y0);
+    }
+    if ((plot_y1 - plot_center_y) < usable_half)
+    {
+        usable_half = (int16_t)(plot_y1 - plot_center_y);
+    }
+    usable_half = (usable_half > 2) ? (int16_t)(usable_half - 2) : 0;
+    scale_q8 = ((int32_t)requested_gain * plot_half_height * 256) / 128;
+    if ((peak_span > 0) && (usable_half > 0))
+    {
+        fit_scale_q8 = ((int32_t)usable_half * 256) / peak_span;
+        if (scale_q8 > fit_scale_q8)
+        {
+            scale_q8 = fit_scale_q8;
+            fit_limited = 1U;
+        }
+    }
+
+    for (i = 0U; i < plot_count; ++i)
+    {
+        uint16_t source_index = (plot_count <= 1U) ? 0U :
+            (uint16_t)(((uint32_t)i * (sample_count - 1U)) /
+                       (plot_count - 1U));
+        source_index = (uint16_t)((source_index + trigger_index) % sample_count);
+        int32_t y = plot_center_y -
+            (((int32_t)samples[source_index] - sample_center) * scale_q8) / 256;
+
+        if (y < (plot_y0 + 2)) { y = plot_y0 + 2; }
+        if (y > (plot_y1 - 2)) { y = plot_y1 - 2; }
+        plot_y[i] = (int16_t)y;
+    }
+    return fit_limited;
+}
+
 const char *ECGAcqCore_QualityText(ecg_signal_quality_t quality)
 {
     switch (quality)

@@ -16,7 +16,7 @@
 #include "mid_lcd.h"
 #include "mid_timer.h"
 
-#define ECG_UI_REFRESH_MS 100U
+#define ECG_UI_REFRESH_MS 40U
 
 enum led_instance { led1 = 0, led2 };
 enum key_instance { key1 = 0, key2, key3, keyd };
@@ -48,10 +48,12 @@ int main(void)
     mx_gpio_init();
     mx_spi0_init();
     mx_adc_init();
+    mx_tim0_adc_init();
     mx_tim2_init();
     mx_tim14_init();
     mx_tim15_init();
     Set_ADC_Channel(ADC_CHANNEL_3);
+    ADC_StreamInit();
 
     led_handle[led1] = led_init(LED1_GPIO_Port, LED1_Pin, RESET);
     led_handle[led2] = led_init(LED2_GPIO_Port, LED2_Pin, RESET);
@@ -71,6 +73,7 @@ int main(void)
     ECGAcq_Init();
     ECGAcq_Start();
     ECGAcq_StaticUI();
+    timer_enable(TIMER0);
     timer_enable(TIMER15);
     timer_enable(TIMER2);
 

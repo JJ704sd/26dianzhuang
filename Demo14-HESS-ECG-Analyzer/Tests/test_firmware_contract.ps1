@@ -67,6 +67,7 @@ function Assert-LiteralCoordinatesInBounds([string]$code) {
 $projectPath = Join-Path $root 'Project\Demo14_HESS_ECG_Analyzer.uvprojx'
 $taskPath = Join-Path $root 'APP\ecg_acq_task.c'
 $taskHeaderPath = Join-Path $root 'APP\ecg_acq_task.h'
+$coreHeaderPath = Join-Path $root 'Middle\ecg_acq_core.h'
 $uiPath = Join-Path $root 'APP\ecg_monitor_ui.c'
 $uiHeaderPath = Join-Path $root 'APP\ecg_monitor_ui.h'
 $pwmPath = Join-Path $root 'Middle\mid_pwm.c'
@@ -74,6 +75,8 @@ $pwmHeaderPath = Join-Path $root 'Middle\mid_pwm.h'
 $timerPath = Join-Path $root 'Middle\mid_timer.c'
 $timerHeaderPath = Join-Path $root 'Middle\mid_timer.h'
 $hardwareTimerPath = Join-Path $root 'Hardware\hw_tim.c'
+$hardwareAdcPath = Join-Path $root 'Hardware\hw_adc.c'
+$middleAdcPath = Join-Path $root 'Middle\mid_adc.c'
 $lcdHardwarePath = Join-Path $root 'Hardware\hw_lcdinit.c'
 $lcdHardwareHeaderPath = Join-Path $root 'Hardware\hw_lcdinit.h'
 $lcdMiddlePath = Join-Path $root 'Middle\mid_lcd.c'
@@ -82,6 +85,7 @@ $splashHeaderPath = Join-Path $root 'APP\hess_splash.h'
 $hospitalSpecPath = Join-Path $root 'Spec\Demo14_HOSPITAL_MONITOR_UI_SPEC.md'
 
 foreach ($required in @($projectPath, $taskPath, $taskHeaderPath, $uiPath,
+                         $coreHeaderPath, $hardwareAdcPath, $middleAdcPath,
                          $uiHeaderPath, $splashPath, $splashHeaderPath,
                          $pwmPath, $pwmHeaderPath, $timerPath, $timerHeaderPath,
                          $hardwareTimerPath, $lcdHardwarePath,
@@ -98,6 +102,7 @@ $outputName = [string]$project.Project.Targets.Target.TargetOption.TargetCommonO
 $main = Get-CodeWithoutComments (Join-Path $root 'User\main.c')
 $task = Get-CodeWithoutComments $taskPath
 $taskHeader = Get-CodeWithoutComments $taskHeaderPath
+$coreHeader = Get-CodeWithoutComments $coreHeaderPath
 $ui = Get-CodeWithoutComments $uiPath
 $uiHeader = Get-CodeWithoutComments $uiHeaderPath
 $pwm = Get-CodeWithoutComments $pwmPath
@@ -105,6 +110,8 @@ $pwmHeader = Get-CodeWithoutComments $pwmHeaderPath
 $timer = Get-CodeWithoutComments $timerPath
 $timerHeader = Get-CodeWithoutComments $timerHeaderPath
 $hardwareTimer = Get-CodeWithoutComments $hardwareTimerPath
+$hardwareAdc = Get-CodeWithoutComments $hardwareAdcPath
+$middleAdc = Get-CodeWithoutComments $middleAdcPath
 $lcdHardware = Get-CodeWithoutComments $lcdHardwarePath
 $lcdHardwareHeader = Get-CodeWithoutComments $lcdHardwareHeaderPath
 $lcdMiddle = Get-CodeWithoutComments $lcdMiddlePath
@@ -123,6 +130,12 @@ Assert-Contract ($taskHeader -match '\bECGAcq_[A-Za-z0-9_]+\s*\(' -and
                  $task -match '\bECGAcq_[A-Za-z0-9_]+\s*\(') 'ECGAcq public interface missing'
 Assert-Contract ($task -match '\bECGAcqCore_DisplaySample\s*\(\s*raw_sample\s*\)' -and
                  $task -notmatch 'result\.filtered\s*/') 'Waveform history must use the undistorted display sample, not the ECG baseline filter'
+Assert-Contract ($coreHeader -match 'ECG_DISPLAY_SAMPLE_RATE_HZ\s+40000U' -and
+                 $coreHeader -match 'ECG_DISPLAY_WAVE_WINDOW_MS\s+5U') 'Fast waveform display must use the 40 kSa/s, 5 ms acceptance timebase'
+Assert-Contract ($task -match '\bADC_StreamCopyLatestDisplay\s*\(' -and
+                 $task -match '\bECGAcqCore_MapDisplaySamples\s*\(') 'WAVE page must use the high-rate DMA frame and bounded display mapper'
+Assert-Contract ($task -match '\bfast_wave_samples\b' -and
+                 $task -match '(?s)view\.running\s*!=\s*0U.*?ADC_StreamCopyLatestDisplay') 'WAVE DMA frame must remain frozen while RUN is off'
 Assert-Contract ($splashHeader -match '\bHESS_Splash_Show\s*\(' -and
                  $splash -match '\bHESS_Splash_Show\s*\(') 'HESS splash interface missing'
 Assert-Contract ($main -match '\bHESS_Splash_Show\s*\(') 'Main does not show the HESS splash'
@@ -131,10 +144,14 @@ Assert-Contract ($main -notmatch '\bSignalGen_') 'Signal generator calls remain 
 Assert-Contract ($main -match '\bmx_tim2_init\s*\(' -and
                  $main -match '\bmx_tim14_init\s*\(' -and
                   $main -match '\btimer_enable\s*\(\s*TIMER2\s*\)') 'PWM output and frequency capture timers are not initialized'
+Assert-Contract ($main -match '\bmx_tim0_adc_init\s*\(' -and
+                 $main -match '\bADC_StreamInit\s*\(' -and
+                 $main -match '\btimer_enable\s*\(\s*TIMER0\s*\)') '40 kSa/s ADC timer/DMA stream is not started'
 $uiRefresh = [regex]::Match($main,
     'if\s*\(\s*get_tft_timer_value\(\)\s*>=\s*ECG_UI_REFRESH_MS\s*\)\s*\{(?<body>.*?)\}',
     [System.Text.RegularExpressions.RegexOptions]::Singleline)
 Assert-Contract ($uiRefresh.Success) 'UI refresh scheduler missing'
+Assert-Contract ($main -match '(?m)^\s*#define\s+ECG_UI_REFRESH_MS\s+40U\s*$') 'Live waveform refresh must run at 25 FPS'
 Assert-Contract ($uiRefresh.Groups['body'].Value -notmatch '\bPAUSE_MS_TIMER\b') 'UI rendering must not pause key or display clocks'
 Assert-Contract ($uiRefresh.Groups['body'].Value -match '(?s)set_tft_timer_value\s*\(\s*0U\s*\).*?ECGAcq_ShowUI\s*\(') 'UI period must be measured from frame start'
 
@@ -179,7 +196,7 @@ Assert-Contract ($ui -notmatch '(?:RR|RMSSD):----') 'Unavailable RR and RMSSD mu
 Assert-Contract ($keyBody -match '\bKEYD_Pin\b' -and
                  $keyBody -match '\bset_pwm_state\s*\(') 'Encoder push must toggle PWM state'
 Assert-Contract ($task -match '\bECG_PWM_PRESET_COUNT\b' -and
-                 $task -match '100U\s*,\s*250U\s*,\s*500U\s*,\s*1000U\s*,\s*2000U') 'Practical PWM frequency presets missing'
+                 $task -match '1U\s*,\s*2U\s*,\s*5U\s*,\s*10U\s*,\s*20U') 'Low-frequency PWM self-test presets missing'
 Assert-Contract ($ui -match '\btext_output\b' -and
                  $ui -match '\btext_input\b' -and
                  $ui -match 'NO SIG' -and
@@ -190,8 +207,10 @@ Assert-Contract ($ui -match '%5luHz' -and
                  $ui -match '\(unsigned long\)measured') 'Measured uint32 frequency must use a matching format'
 Assert-Contract ($pwm -match 'period\s*-\s*1U' -and
                  $pwm -match 'duty\s*>\s*pwm_period') 'PWM ARR N-1 and duty clamp are required'
+Assert-Contract ($pwmHeader -match 'PWM_TIMER_FREQ_HZ\s+10000U' -and
+                 $hardwareTimer -match '(?s)mx_tim14_init.*?prescaler\s*=\s*7199') 'PWM timer must use the 10 kHz base required for 1 Hz output'
 Assert-Contract ($pwm -notmatch '\b(?:float|double)\b') 'PWM module must use integer math only'
-Assert-Contract ($timerHeader -match 'FREQ_SIGNAL_TIMEOUT_MS\s+1500U' -and
+Assert-Contract ($timerHeader -match 'FREQ_SIGNAL_TIMEOUT_MS\s+2500U' -and
                  $timer -match '\btimer_measurement_is_fresh\s*\(') 'Frequency capture stale-data timeout missing'
 Assert-Contract ($hardwareTimer -match '(?s)mx_tim14_init.*?GPIO_PIN_2.*?TIMER14' -and
                  $hardwareTimer -match '(?s)mx_tim2_init.*?GPIO_PIN_6.*?TIMER2') 'PA2 PWM or PA6 capture pin contract missing'
@@ -200,9 +219,27 @@ Assert-Contract ($hardwareTimer -match '(?m)^\s*#define\s+FREQ_CAPTURE_FILTER\s+
                  $hardwareTimer -match '\bicfilter\s*=\s*FREQ_CAPTURE_FILTER\b') 'PA6 capture must use a nonzero digital input filter'
 Assert-Contract ($hardwareTimer -match 'nvic_irq_enable\s*\(\s*TIMER2_IRQn\s*,\s*1U\s*\)' -and
                   $hardwareTimer -match 'nvic_irq_enable\s*\(\s*TIMER15_IRQn\s*,\s*0U\s*\)') 'ECG sample IRQ must outrank frequency capture IRQ'
+Assert-Contract ($hardwareTimer -match 'ADC_SCOPE_TIMER_PERIOD\s+24U' -and
+                 $hardwareTimer -match 'ADC_SCOPE_TIMER_COMPARE\s+12U' -and
+                 $hardwareTimer -match '(?s)mx_tim0_adc_init.*?TIMER0.*?TIMER_CH_0' -and
+                 $hardwareTimer -match 'timer_channel_output_pulse_value_config\s*\(\s*TIMER0\s*,\s*TIMER_CH_0\s*,\s*ADC_SCOPE_TIMER_COMPARE\s*\)') 'TIMER0 must provide a 40 kHz ADC trigger at an interior compare point'
+Assert-Contract ($hardwareAdc -match 'ADC_CONTINUOUS_MODE\s*,\s*DISABLE' -and
+                 $hardwareAdc -match 'ADC_EXTTRIG_REGULAR_T0_CH0' -and
+                 $hardwareAdc -match '(?s)mx_adc_scope_dma_init.*?dma_circulation_enable' -and
+                 $hardwareAdc -match 'DMA_CHXCTL_HTFIE\s*\|\s*DMA_CHXCTL_FTFIE') 'ADC fast path must use timer-triggered circular DMA with stable half frames'
+Assert-Contract ($middleAdc -match '\bADC_StreamCopyLatestDisplay\s*\(' -and
+                 $middleAdc -match '\bADC_SCOPE_HALF_SAMPLES\b' -and
+                 $middleAdc -match 'static\s+volatile\s+uint16_t\s+adc_scope_buffer') 'ADC stream snapshot must treat the DMA buffer as asynchronous data'
+Assert-Contract ($uiHeader -match '\bwave_frame_ready\b' -and
+                 $uiHeader -match '\bwave_span\b' -and
+                 $ui -match 'DMA WAIT' -and $ui -match 'FLAT') 'WAVE UI must distinguish a missing DMA frame from a flat frame'
 Assert-Contract ($lcdHardware -match '\bSPI_FLAG_TRANS\b') 'LCD SPI transactions must wait for the final shifted bit'
 Assert-Contract ($lcdHardwareHeader -match '\bTFT_WriteColorBurst\s*\(' -and
                  $lcdHardware -match '\bTFT_WriteColorBurst\s*\(') 'LCD color-burst interface missing'
+Assert-Contract ($lcdHardwareHeader -match '\bTFT_WritePixels\s*\(' -and
+                 $lcdHardware -match '\bTFT_WritePixels\s*\(' -and
+                 $lcdMiddle -match '\bTFT_DrawPixelRow\s*\(' -and
+                 $ui -match '\bTFT_DrawPixelRow\s*\(') 'LCD scanline burst path missing'
 $fillBody = Get-FunctionBody $lcdMiddle 'TFT_Fill'
 Assert-Contract ($null -ne $fillBody -and
                  $fillBody -match '\bTFT_WriteColorBurst\s*\(') 'TFT_Fill must use one continuous color burst'
@@ -216,6 +253,8 @@ Assert-Contract ($renderBody -match '(?:plot_count\s*<\s*2U?|plot_count\s*<=\s*1
 Assert-Contract ($ui -notmatch '\b(?:malloc|calloc|realloc|free)\s*\(') 'UI module must not use dynamic allocation'
 Assert-Contract ($ui -notmatch '\b(?:float|double)\b') 'UI module must not require floating point'
 Assert-Contract ($ui -match '\bTFT_ShowChinese\s*\(') 'Demo UI must present concise Chinese descriptions'
+Assert-Contract ($ui -match '%ums' -and
+                 $ui -match 'fit_limited') 'WAVE page must show millisecond timebase and automatic fit state'
 Assert-Contract ($ui -match '0xCA\s*,\s*0xE4\s*,\s*0xC8\s*,\s*0xEB' -and
                  $ui -match '0xC6\s*,\s*0xB5\s*,\s*0xC2\s*,\s*0xCA') 'Chinese UI labels must use explicit GBK byte arrays'
 Assert-Contract ($ui -notmatch '"[^"\r\n]*[\u4e00-\u9fff][^"\r\n]*"') 'Do not pass UTF-8 Chinese literals to the GBK-indexed TFT font'

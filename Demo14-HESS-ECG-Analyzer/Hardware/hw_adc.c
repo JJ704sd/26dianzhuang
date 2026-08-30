@@ -15,8 +15,8 @@ void mx_adc_init(void)
 	//引脚配置，PA3，模拟输入，无上下拉
 	gpio_mode_set(GPIOA, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIO_PIN_3);
 	
-	//ADC连续功能使能
-	adc_special_function_config(ADC_CONTINUOUS_MODE, ENABLE); 
+	//由TIMER0以40kSa/s定时触发，避免自由运行采样率不可控
+	adc_special_function_config(ADC_CONTINUOUS_MODE, DISABLE);
 
 	//ADC扫描功能失能，这里仅一个通道
 	adc_special_function_config(ADC_SCAN_MODE, DISABLE);
@@ -37,7 +37,7 @@ void mx_adc_init(void)
   adc_tempsensor_vrefint_enable();
 		
 	//ADC触发器配置，软件触发
-	adc_external_trigger_source_config(ADC_REGULAR_CHANNEL, ADC_EXTTRIG_REGULAR_NONE); 
+	adc_external_trigger_source_config(ADC_REGULAR_CHANNEL, ADC_EXTTRIG_REGULAR_T0_CH0);
 	adc_external_trigger_config(ADC_REGULAR_CHANNEL, ENABLE);
 	
 	//使能ADC
@@ -50,8 +50,6 @@ void mx_adc_init(void)
 	//DMA模式使能
 	adc_dma_mode_enable();
 	
-	//ADC软件触发使能
-	adc_software_trigger_enable(ADC_REGULAR_CHANNEL);
 }
 
 void mx_adc_dma_init(uint32_t adc_value,uint32_t number)
@@ -81,4 +79,27 @@ void mx_adc_dma_init(uint32_t adc_value,uint32_t number)
     dma_channel_enable(DMA_CH0);                                    //DMA通道0使能
     
     dma_interrupt_enable(DMA_CH0, DMA_CHXCTL_FTFIE);								//使能DMA传输完成中断
+}
+
+void mx_adc_scope_dma_init(uint32_t adc_value, uint32_t number)
+{
+    dma_parameter_struct dma_data_parameter;
+
+    rcu_periph_clock_enable(RCU_DMA);
+    nvic_irq_enable(DMA_Channel0_IRQn, 0U);
+    dma_deinit(DMA_CH0);
+    dma_data_parameter.periph_addr  = (uint32_t)(&ADC_RDATA);
+    dma_data_parameter.periph_inc   = DMA_PERIPH_INCREASE_DISABLE;
+    dma_data_parameter.memory_addr  = adc_value;
+    dma_data_parameter.memory_inc   = DMA_MEMORY_INCREASE_ENABLE;
+    dma_data_parameter.periph_width = DMA_PERIPHERAL_WIDTH_16BIT;
+    dma_data_parameter.memory_width = DMA_MEMORY_WIDTH_16BIT;
+    dma_data_parameter.direction    = DMA_PERIPHERAL_TO_MEMORY;
+    dma_data_parameter.number       = number;
+    dma_data_parameter.priority     = DMA_PRIORITY_ULTRA_HIGH;
+    dma_init(DMA_CH0, &dma_data_parameter);
+    dma_circulation_enable(DMA_CH0);
+    dma_memory_to_memory_disable(DMA_CH0);
+    dma_interrupt_enable(DMA_CH0, DMA_CHXCTL_HTFIE | DMA_CHXCTL_FTFIE);
+    dma_channel_enable(DMA_CH0);
 }

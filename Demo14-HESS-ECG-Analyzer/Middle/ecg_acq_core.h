@@ -5,6 +5,10 @@
 
 #define ECG_ACQ_SAMPLE_RATE_HZ       250U
 #define ECG_ACQ_RR_HISTORY_COUNT       8U
+#define ECG_DISPLAY_SAMPLE_RATE_HZ  40000U
+#define ECG_DISPLAY_WAVE_WINDOW_MS      5U
+#define ECG_DISPLAY_WAVE_WINDOW_SAMPLES \
+    ((ECG_DISPLAY_SAMPLE_RATE_HZ * ECG_DISPLAY_WAVE_WINDOW_MS) / 1000U)
 
 typedef enum
 {
@@ -49,6 +53,16 @@ typedef struct
 void ECGAcqCore_Init(ecg_acq_core_t *core);
 ecg_acq_result_t ECGAcqCore_Process(ecg_acq_core_t *core, uint16_t adc_sample);
 int8_t ECGAcqCore_DisplaySample(uint16_t adc_sample);
+uint8_t ECGAcqCore_MapDisplaySamples(const int8_t *samples,
+                                     uint16_t sample_count,
+                                     uint8_t requested_gain,
+                                     uint8_t rising_trigger,
+                                     int16_t plot_y0,
+                                     int16_t plot_y1,
+                                     int16_t plot_center_y,
+                                     int16_t plot_half_height,
+                                     int16_t *plot_y,
+                                     uint16_t plot_count);
 const char *ECGAcqCore_QualityText(ecg_signal_quality_t quality);
 
 #endif
