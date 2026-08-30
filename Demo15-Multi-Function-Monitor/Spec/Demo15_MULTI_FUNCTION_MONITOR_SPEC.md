@@ -3,8 +3,8 @@
 ## Objective
 
 Provide one independently buildable GD32E230C8T6 project that covers the
-oscilloscope implementation, ECG monitoring implementation and the HESS ECG
-analysis extension without modifying Demo12, Demo13 or Demo14.
+oscilloscope implementation, ECG monitoring implementation and a simulated
+SpO2/PPG signal monitor without modifying Demo12, Demo13 or Demo14.
 
 ## Functional contract
 
@@ -26,19 +26,21 @@ analysis extension without modifying Demo12, Demo13 or Demo14.
 - Display the ECG trace, BPM, signal state and selectable timebase.
 - Clear stale heart-rate measurements after a signal timeout.
 
-### HESS analyzer mode
+### Simulated SpO2/PPG monitor mode
 
-- Feed every 250 Hz ECG sample into the Demo14 analysis core.
-- Display BPM, latest RR, RMSSD and `WAIT`, `GOOD`, `POOR`, `LEAD OFF` or
-  `CLIPPED` quality.
-- Show the HESS startup screen at boot and share the ECG waveform/timebase with
-  ECG monitor mode instead of allocating a second history buffer.
+- Accept a safe analog PPG-like waveform from RIGOL DG1032Z CH1 through the
+  existing BNC/PA3 path.
+- Display the acquired waveform, BPM, Vpp, signal state and selectable 1-5 s
+  timebase.
+- Mark the page permanently as `SIM/PPG` and share the ECG waveform history
+  instead of allocating a second buffer.
+- Retain the existing startup animation.
 
-### SpO2 status
+### SpO2 truthfulness boundary
 
-- SpO2 acquisition and display are not implemented because no blood-oxygen
-  sensor, interface pins or validated algorithm are defined in the source
-  projects. Do not display placeholder measurements as real SpO2 data.
+- Do not display an oxygen-saturation percentage. A single generated analog
+  waveform does not contain the red/infrared ratio needed for a real SpO2
+  result, and no alternative encoding contract has been defined.
 
 ## Mode and naming contract
 
@@ -67,14 +69,17 @@ The visual rationale, evidence boundary and hardware stimulus matrix are in
    pass.
 2. Rebuild `Project/Demo15_Multi_Function_Monitor.uvprojx` with ArmClang and
    require zero errors and warnings.
-3. Confirm the project links the scope view, ECG core, HESS analyzer and HESS
-   splash modules and emits the correctly named HEX file.
+3. Confirm the project links the scope view, ECG/pulse core, retained startup
+   animation and emits the correctly named HEX file.
 4. Flash the board, hold SW2 repeatedly and verify the three-mode cycle.
 5. In oscilloscope mode, check PA3 waveform/Vpp/input duty, PA6 frequency, PA2
    PWM and all timebases with safe sine, square and pulse inputs. Check a 1 Hz
    waveform at 2-5 s, a 1 kHz waveform at 2-4 ms, and 25/50/75% input duty.
-6. In ECG and HESS modes, use an isolated safe ECG source and check waveform,
-   BPM, RR, RMSSD, quality, timebase and run/hold behavior.
+6. In ECG mode, use an isolated safe ECG source and check waveform, BPM,
+   signal state, timebase and run/hold behavior.
+7. In simulated SpO2 mode, use the DG1032Z profiles in
+   `DG1032Z_SPO2_SIM_MODE_SPEC.md`; check the `SpO2`, `SIM` and `PPG` labels,
+   waveform, BPM, Vpp, signal state, timebase and run/hold behavior.
 
-Steps 4 through 6 remain hardware acceptance items even when host tests and the
+Steps 4 through 7 remain hardware acceptance items even when host tests and the
 Keil build pass.

@@ -8,13 +8,12 @@ GD32E230C8T6 project:
    measurement, and the PA2 PWM reference output.
 2. `ECG_MONITOR`: a 250 Hz ECG history, heartbeat detection, BPM display and
    one-to-five-second timebase views.
-3. `HESS_ANALYZER`: the extended Demo14 analysis core with BPM, RR, RMSSD and
-   signal-quality classification.
+3. `SPO2_MONITOR`: a PA3 laboratory monitor for a RIGOL DG1032Z simulated
+   PPG/blood-oxygen waveform, with waveform, BPM, Vpp and signal state.
 
-SpO2 is not implemented in this firmware. The repository contains no blood-
-oxygen sensor driver, bus/pin contract or SpO2 algorithm, so the UI does not
-show fabricated oxygen-saturation values. A real SpO2 mode requires the exact
-sensor module and wiring to be defined first.
+The third mode is explicitly marked `SIM/PPG`. It does not use an optical
+sensor and does not fabricate an oxygen-saturation percentage from a single
+analog channel.
 
 The folder uses `DemoNN-Title-Case`; the Keil project and output use
 `Demo15_Multi_Function_Monitor` so paths remain ASCII and tool-friendly.
@@ -22,9 +21,9 @@ The folder uses `DemoNN-Title-Case`; the Keil project and output use
 ## Controls
 
 - Hold `SW2` for two seconds: cycle `OSCILLOSCOPE -> ECG_MONITOR ->
-  HESS_ANALYZER -> OSCILLOSCOPE`.
+  SPO2_MONITOR -> OSCILLOSCOPE`.
 - Rotate the encoder: change the oscilloscope timebase from 2 ms through 5 s,
-  or change the ECG/HESS timebase.
+  or change the ECG/SpO2 timebase.
 - Hold `SW1` for two seconds in `OSCILLOSCOPE`: toggle 5 Vpp/1 Vpp display
   range.
 - Press `SW1`: enable or disable PA2 PWM.
@@ -45,6 +44,10 @@ Long-press actions suppress the corresponding short-press result.
 Use an ECG simulator or isolated analog-front-end output with common ground.
 Do not connect a patient, an unisolated electrode circuit, negative voltage or
 more than 3.3 V directly to PA3. This project is not a medical device.
+
+For the simulated SpO2 mode, connect DG1032Z CH1 to the board BNC input, set
+the generator load to High Z and begin with the profiles in
+`Spec/DG1032Z_SPO2_SIM_MODE_SPEC.md`.
 
 ## Build and verification
 
@@ -67,14 +70,14 @@ evidence boundary and signal-generator test matrix.
 - ArmClang 6.24 with size optimization (`-Oz`).
 - Device pack: `GigaDevice.GD32E23x_DFP 1.1.0`.
 - Result: `0 Error(s), 0 Warning(s)`.
-- Program size: Code 17318 B, RO data 6550 B.
+- Program size: Code 17334 B, RO data 6550 B.
 - Image RAM: RW 24 B plus ZI 6472 B = 6496 B. The ZI total includes the
   configured 1536 B stack, leaving 1696 B of the 8 KB SRAM unallocated.
 - The previous call-graph estimate used at most 320 B of stack, with the usual
   caveat for indirect calls and interrupt nesting; it fits inside the reserved
   stack.
 - HEX SHA-256:
-  `B1038CD8F3B3FFAB2B17B67D813B050F39E6770C4C4F95453033A3D9C34E78AD`.
+  `205F1AACF1226EE88403DD4FA0B3CDF95843B20820726B4754CC8D2F9CC6BF1B`.
 
 These values come from a full rebuild. Physical-board acceptance is still
 required.

@@ -27,7 +27,7 @@ exact spoken sentence.
 | 00:35-01:05 | Scope screen shows a stable periodic waveform plus frequency, Vpp and duty information. Pulse/square-like waveforms are visible. | Waveform rendering and numeric measurements form one measurement view. |
 | 01:05-01:45 | Generator waveform/settings and physical controls are changed; the board display responds. | Buttons/encoder must provide immediate, visible feedback without rebooting. |
 | 01:45-02:25 | Low-frequency/cardiac-like stimulus is displayed on a multi-second timebase. | Low-frequency ECG/cardiac display needs a separate time scale from the fast scope path. |
-| 02:25-03:09 | ECG/HESS-style pages show run state, timebase and heart-rate/quality context; a board LED follows an enabled output state. | Mode, run/hold, measurements and output state must be explicit and mutually consistent. |
+| 02:25-03:09 | Physiological-signal pages show run state, timebase and pulse context; a board LED follows an enabled output state. | Mode, run/hold, measurements and output state must be explicit and mutually consistent. |
 
 Timestamps identify regions of interest rather than frame-accurate test steps.
 
@@ -68,14 +68,15 @@ planned measurement-panel extension, not part of this minimal change: adding
 them must not shrink the waveform below a useful size or break the 32 KB flash
 and 8 KB SRAM budgets.
 
-### 4.2 ECG and HESS modes
+### 4.2 ECG and simulated SpO2/PPG modes
 
 - Decimate the shared acquisition stream to 250 Hz and keep five seconds of
   display history.
 - ECG mode displays waveform, BPM, signal validity, run/hold and timebase.
-- HESS mode displays waveform, BPM, RR, RMSSD and quality state.
+- Simulated SpO2 mode displays the generated PPG-like waveform, BPM, Vpp and
+  signal state and is permanently marked `SIM/PPG`.
 - Heart-rate values time out when no valid peak remains current.
-- These modes must consume genuine PA3 samples. Synthetic cardiac graphics or
+- These modes must consume genuine PA3 samples. Synthetic screen graphics or
   placeholder medical values are not acceptance evidence.
 
 ### 4.3 Status feedback
@@ -88,20 +89,20 @@ and 8 KB SRAM budgets.
 
 ### 4.4 SpO2 boundary
 
-SpO2 remains not implemented. The source projects define no validated optical
-sensor, interface, calibration or algorithm. Demo15 must not display a
-placeholder saturation number as a real measurement.
+The third mode displays a DG1032Z-generated analog PPG-like signal, not optical
+sensor data. It must not display a placeholder saturation percentage as a real
+measurement.
 
 ## 5. Control contract
 
-| Control | Scope mode | ECG/HESS mode |
+| Control | Scope mode | ECG/SpO2 mode |
 | --- | --- | --- |
 | SW1 short | Toggle PA2 PWM output | Toggle PA2 PWM output |
 | SW1 hold 2 s | Toggle 1 Vpp / 5 Vpp scope range without retaining the short-press side effect | No range change |
 | SW2 short | Adjust PWM frequency | Adjust PWM frequency |
-| SW2 hold 2 s | Cycle Scope -> ECG -> HESS without retaining the short-press side effect | Same |
+| SW2 hold 2 s | Cycle Scope -> ECG -> SpO2 without retaining the short-press side effect | Same |
 | SW3 short | Adjust PWM duty | Adjust PWM duty |
-| Encoder rotate | Change scope timebase | Change ECG/HESS timebase |
+| Encoder rotate | Change scope timebase | Change ECG/SpO2 timebase |
 | Encoder press | Run/hold | Run/hold |
 
 ## 6. Acceptance matrix
@@ -116,9 +117,10 @@ validated analog-front-end range. PA3 itself must never be driven outside
 | Square duty | 1 kHz square/pulse at 25%, 50% and 75% duty | Shape changes visibly; `DIN` follows the configured duty and is not confused with PWM output duty. |
 | Low-frequency sine | 1 Hz, 2-5 s timebase | At least one complete cycle is visible without the former nearly-flat fast-window appearance. |
 | Cardiac stimulus | Safe isolated cardiac/ECG simulator, 2-5 s timebase | ECG trace is recognizable; BPM becomes valid only after qualified peaks. |
+| Simulated PPG | DG1032Z CH1, High Z, 1.2 Hz sine, 1.0 Vpp, +1.0 V offset | `SpO2 SIM/PPG` page shows a stable trace near 72 BPM without a fabricated saturation percentage. |
 | Run/hold | Any stable waveform | Hold freezes the captured view and status reads `HOLD`; resume returns to `RUN`. |
 | Output feedback | Toggle SW1 | LCD `OUT` and LED2 change together; PA2 output state matches both. |
-| Mode cycle | Hold SW2 repeatedly | Scope, ECG and HESS cycle in order; PWM frequency is restored after the long press. |
+| Mode cycle | Hold SW2 repeatedly | Scope, ECG and SpO2 cycle in order; PWM frequency is restored after the long press. |
 | Invalid input | Disconnect or near-flat source | Duty reads `---%`; medical values do not present stale/placeholder data as valid. |
 
 Host tests and a successful Keil build validate software structure only. The
@@ -133,6 +135,7 @@ table above remains the required hardware acceptance record.
 | Input duty distinct from output control | `scope_metrics.c`, LCD label `DIN` | Implemented in this change |
 | Visible output-state feedback | LCD `OUT` plus LED2 mirror | Implemented in this change |
 | Firmware-alive indication | LED1 on after initialization | Implemented in this change |
-| ECG/HESS pages backed by acquired samples | Shared 250 Hz history and HESS core | Implemented; hardware validation pending |
+| ECG/SpO2 pages backed by acquired samples | Shared 250 Hz history and pulse core | Implemented; hardware validation pending |
 | Vmax/Vmin/Vavg/Vrms panel | No current UI allocation | Planned |
-| SpO2 value | No defined sensor/algorithm | Intentionally not implemented |
+| Simulated PPG waveform | DG1032Z CH1 through existing PA3 path | Implemented; hardware validation pending |
+| SpO2 percentage | Single-channel generator signal has no red/IR ratio | Intentionally not displayed |

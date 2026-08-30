@@ -23,10 +23,10 @@ foreach ($source in 'scope_view.c','scope_metrics.c','ecg_acq_core.c','hess_anal
         throw "Project does not link $source"
     }
 }
-foreach ($mode in 'DEMO15_MODE_OSCILLOSCOPE','DEMO15_MODE_ECG_MONITOR','DEMO15_MODE_HESS_ANALYZER') {
+foreach ($mode in 'DEMO15_MODE_OSCILLOSCOPE','DEMO15_MODE_ECG_MONITOR','DEMO15_MODE_SPO2_MONITOR') {
     if ($header -notmatch $mode) { throw "Missing mode $mode" }
 }
-if ($main -notmatch 'HESS_Splash_Show\(\)') { throw 'HESS splash is not started' }
+if ($main -notmatch 'HESS_Splash_Show\(\)') { throw 'Startup animation is not retained' }
 if ($main -notmatch 'Demo15_SelectNextMode\(\)') { throw 'Three-mode selector is not wired' }
 if (($main -notmatch 'led_turn_on\(&led_handle\[led1\]\)') -or
     ($main -notmatch 'update_status_led\(\)')) {
@@ -52,6 +52,14 @@ if (($task -notmatch '250U, 500U, 1000U, 1250U') -or
 }
 if ($task -match '\bAPP_MODE_(SCOPE|ECG)\b') {
     throw 'Stale two-mode identifiers remain in Demo15'
+}
+if (($task -notmatch '\? "SpO2" : "ECG "') -or
+    ($task -notmatch '\? "SIM" : "PWM"') -or
+    ($task -notmatch '\(const uint8_t \*\)"PPG"')) {
+    throw 'Simulated SpO2/PPG mode is not clearly identified in the UI'
+}
+if ($task -match 'DEMO15_MODE_HESS_ANALYZER') {
+    throw 'Retired HESS mode identifier remains in the application task'
 }
 if (($task -notmatch 'ScopeMetrics_Analyze\(') -or
     ($task -notmatch '\(const uint8_t \*\)"DIN"')) {

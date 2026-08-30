@@ -38,7 +38,7 @@ Invoke-NativeTest 'demo15_mid_pwm' @(
     (Join-Path $root 'Middle\mid_pwm.c')
 ) @((Join-Path $PSScriptRoot 'stubs'), (Join-Path $root 'Middle'))
 
-Write-Host '[5/6] HESS ECG analysis core tests'
+Write-Host '[5/6] ECG/PPG pulse analysis core tests'
 Invoke-NativeTest 'demo15_ecg_acq_core' @(
     (Join-Path $PSScriptRoot 'test_ecg_acq_core.c'),
     (Join-Path $root 'Middle\ecg_acq_core.c')

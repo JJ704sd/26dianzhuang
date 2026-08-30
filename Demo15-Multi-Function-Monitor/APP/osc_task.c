@@ -85,7 +85,7 @@ static scope_metrics_t scope_metrics;
 static int32_t baseline_q8;
 static int16_t filtered_value;
 
-static void ecg_show_ui(void);
+static void vital_show_ui(uint8_t spo2_sim_mode);
 
 static uint16_t ecg_abs16(int16_t value)
 {
@@ -322,10 +322,12 @@ static void draw_wave_grid(void)
     }
 }
 
-static void ecg_static_ui(void)
+static void vital_static_ui(uint8_t spo2_sim_mode)
 {
     TFT_Fill(0U, 0U, 160U, 128U, BLACK);
-    TFT_ShowString(2U, 0U, (const uint8_t *)"ECG", WHITE, BLACK, 16U, 0U);
+    TFT_ShowString(2U, 0U,
+                   (const uint8_t *)((spo2_sim_mode != 0U) ? "SpO2" : "ECG "),
+                   WHITE, BLACK, 16U, 0U);
     TFT_ShowString(80U, 0U, (const uint8_t *)"TB", WHITE, BLACK, 16U, 0U);
 
     TFT_DrawLine(0U, 16U, 159U, 16U, CYAN);
@@ -339,13 +341,15 @@ static void ecg_static_ui(void)
     TFT_ShowString(2U, 96U, (const uint8_t *)"Vpp", WHITE, BLACK, 16U, 0U);
     TFT_ShowString(44U, 96U, (const uint8_t *)"SIG", WHITE, BLACK, 16U, 0U);
     TFT_ShowString(76U, 96U, (const uint8_t *)"SPAN", WHITE, BLACK, 16U, 0U);
-    TFT_ShowString(128U, 96U, (const uint8_t *)"PWM", WHITE, BLACK, 16U, 0U);
+    TFT_ShowString(128U, 96U,
+                   (const uint8_t *)((spo2_sim_mode != 0U) ? "SIM" : "PWM"),
+                   WHITE, BLACK, 16U, 0U);
 
     draw_wave_grid();
-    ecg_show_ui();
+    vital_show_ui(spo2_sim_mode);
 }
 
-static void ecg_show_ui(void)
+static void vital_show_ui(uint8_t spo2_sim_mode)
 {
     char show_data[12];
     uint32_t peak_age = ecg_sample_count - ecg_last_peak_sample;
@@ -354,7 +358,9 @@ static void ecg_show_ui(void)
     uint8_t signal_ok = (uint8_t)((ecg_bpm != 0U) &&
                                   (peak_age < ECG_SIGNAL_TIMEOUT));
 
-    draw_heart(heart_active);
+    if(spo2_sim_mode == 0U){
+        draw_heart(heart_active);
+    }
 
     if(osc_stop_bit == OSC_RUN){
         TFT_ShowString(44U, 0U, (const uint8_t *)"RUN ", BLACK, GREEN, 16U, 0U);
@@ -398,7 +404,9 @@ static void ecg_show_ui(void)
                    (const uint8_t *)timebase_labels[ecg_timebase_index],
                    CYAN, BLACK, 16U, 0U);
 
-    if(get_pwm_state() == PWM_ON){
+    if(spo2_sim_mode != 0U){
+        TFT_ShowString(128U, 112U, (const uint8_t *)"PPG", CYAN, BLACK, 16U, 0U);
+    }else if(get_pwm_state() == PWM_ON){
         TFT_ShowString(128U, 112U, (const uint8_t *)"RUN", GREEN, BLACK, 16U, 0U);
     }else{
         TFT_ShowString(128U, 112U, (const uint8_t *)"OFF", RED, BLACK, 16U, 0U);
@@ -770,12 +778,9 @@ static void scope_wave_show(uint16_t vref_value)
 void TFT_StaticUI(void)
 {
     if(app_mode == DEMO15_MODE_ECG_MONITOR){
-        ecg_static_ui();
-    }else if(app_mode == DEMO15_MODE_HESS_ANALYZER){
-        HESSAnalyzer_DrawStatic();
-        draw_wave_grid();
-        HESSAnalyzer_ShowUI((uint8_t)(osc_stop_bit == OSC_RUN),
-                            timebase_labels[ecg_timebase_index]);
+        vital_static_ui(0U);
+    }else if(app_mode == DEMO15_MODE_SPO2_MONITOR){
+        vital_static_ui(1U);
     }else{
         scope_static_ui();
     }
@@ -784,10 +789,9 @@ void TFT_StaticUI(void)
 void TFT_ShowUI(void)
 {
     if(app_mode == DEMO15_MODE_ECG_MONITOR){
-        ecg_show_ui();
-    }else if(app_mode == DEMO15_MODE_HESS_ANALYZER){
-        HESSAnalyzer_ShowUI((uint8_t)(osc_stop_bit == OSC_RUN),
-                            timebase_labels[ecg_timebase_index]);
+        vital_show_ui(0U);
+    }else if(app_mode == DEMO15_MODE_SPO2_MONITOR){
+        vital_show_ui(1U);
     }else{
         scope_show_ui();
     }
@@ -796,7 +800,7 @@ void TFT_ShowUI(void)
 void osc_waveShow(uint16_t vref_value)
 {
     if((app_mode == DEMO15_MODE_ECG_MONITOR) ||
-       (app_mode == DEMO15_MODE_HESS_ANALYZER)){
+       (app_mode == DEMO15_MODE_SPO2_MONITOR)){
         ecg_wave_show(vref_value);
     }else{
         scope_wave_show(vref_value);
