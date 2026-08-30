@@ -5,7 +5,7 @@ GD32E230C8T6 project:
 
 1. `OSCILLOSCOPE`: 20 kSa/s PA3 acquisition for 2-40 ms views plus a packed
    250 Sa/s history for 1-5 s views, trigger/free-run display, Vpp and frequency
-   measurement, and the PA2 PWM reference output.
+   measurement, raw-noise peak-detect display, and the PA2 PWM reference output.
 2. `ECG_MONITOR`: a 250 Hz ECG history, heartbeat detection, BPM display and
    one-to-five-second timebase views.
 3. `SPO2_MONITOR`: a PA3 laboratory monitor for a RIGOL DG1032Z simulated
@@ -32,6 +32,12 @@ The folder uses `DemoNN-Title-Case`; the Keil project and output use
 - Press `KEYD`: run or hold the displayed waveform.
 
 Long-press actions suppress the corresponding short-press result.
+
+For raw noise observation, use a 2-40 ms oscilloscope timebase. Fast windows
+retain the 20 kSa/s ADC samples and use min/max peak detection when compressed
+to the LCD width. Hold `SW1` to select the 1 Vpp range for low-amplitude noise.
+The 1-5 s views are averaged to 250 Sa/s for low-frequency/physiological
+signals and therefore intentionally do not preserve wideband raw noise.
 
 ## Hardware contract
 
@@ -70,14 +76,14 @@ evidence boundary and signal-generator test matrix.
 - ArmClang 6.24 with size optimization (`-Oz`).
 - Device pack: `GigaDevice.GD32E23x_DFP 1.1.0`.
 - Result: `0 Error(s), 0 Warning(s)`.
-- Program size: Code 17334 B, RO data 6550 B.
+- Program size: Code 16986 B, RO data 6526 B.
 - Image RAM: RW 24 B plus ZI 6472 B = 6496 B. The ZI total includes the
   configured 1536 B stack, leaving 1696 B of the 8 KB SRAM unallocated.
 - The previous call-graph estimate used at most 320 B of stack, with the usual
   caveat for indirect calls and interrupt nesting; it fits inside the reserved
   stack.
 - HEX SHA-256:
-  `205F1AACF1226EE88403DD4FA0B3CDF95843B20820726B4754CC8D2F9CC6BF1B`.
+  `768072A2A77BD0347D37052B066369D4B958FDD90F8823C8A0B027A09830D6F3`.
 
 These values come from a full rebuild. Physical-board acceptance is still
 required.

@@ -54,6 +54,8 @@ Timestamps identify regions of interest rather than frame-accurate test steps.
   timebases.
 - Display the input waveform with a fixed vertical scale and compensate the
   inverting analog front end.
+- Preserve the raw fast-history envelope with chronological min/max peak
+  detection when the source window exceeds the 120-pixel display width.
 - Display input Vpp, input frequency and input duty (`DIN`).
 - Calculate `DIN` from the midpoint between the observed minimum and maximum.
   Because the analog front end is inverting, samples below the midpoint count

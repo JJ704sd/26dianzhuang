@@ -88,13 +88,75 @@ uint16_t ScopeView_CopyWindow(const uint16_t *history,
         }
     }
 
-    for (i = 0U; i < output_count; ++i)
+    if (source_count <= output_count)
     {
-        const uint16_t offset = (output_count == 1U) ? 0U :
-            (uint16_t)(((uint32_t)i * (source_count - 1U)) /
-                       (output_count - 1U));
-        output[i] = history_sample(history, history_size, oldest,
-                                   (uint16_t)((start + offset) % source_count));
+        for (i = 0U; i < output_count; ++i)
+        {
+            output[i] = history_sample(
+                history, history_size, oldest,
+                (uint16_t)((start + i) % source_count));
+        }
+    }
+    else
+    {
+        const uint16_t pair_count = (uint16_t)((output_count + 1U) / 2U);
+        uint16_t pair;
+
+        /* Preserve both extrema from each chronological source bucket. This
+         * is a peak-detect display, not an average: narrow noise spikes remain
+         * visible when 200-800 raw samples are compressed to 120 LCD points.
+         */
+        for (pair = 0U; pair < pair_count; ++pair)
+        {
+            const uint16_t bucket_begin =
+                (uint16_t)(((uint32_t)pair * source_count) / pair_count);
+            uint16_t bucket_end =
+                (uint16_t)(((uint32_t)(pair + 1U) * source_count) / pair_count);
+            uint16_t bucket_offset = bucket_begin;
+            uint16_t minimum_offset = bucket_begin;
+            uint16_t maximum_offset = bucket_begin;
+            uint16_t minimum_value = history_sample(
+                history, history_size, oldest,
+                (uint16_t)((start + bucket_begin) % source_count));
+            uint16_t maximum_value = minimum_value;
+            const uint16_t output_index = (uint16_t)(pair * 2U);
+
+            if (bucket_end <= bucket_begin) { bucket_end = bucket_begin + 1U; }
+            for (bucket_offset = (uint16_t)(bucket_begin + 1U);
+                 bucket_offset < bucket_end; ++bucket_offset)
+            {
+                const uint16_t sample = history_sample(
+                    history, history_size, oldest,
+                    (uint16_t)((start + bucket_offset) % source_count));
+                if (sample < minimum_value)
+                {
+                    minimum_value = sample;
+                    minimum_offset = bucket_offset;
+                }
+                if (sample > maximum_value)
+                {
+                    maximum_value = sample;
+                    maximum_offset = bucket_offset;
+                }
+            }
+
+            if (minimum_offset <= maximum_offset)
+            {
+                output[output_index] = minimum_value;
+                if ((uint16_t)(output_index + 1U) < output_count)
+                {
+                    output[output_index + 1U] = maximum_value;
+                }
+            }
+            else
+            {
+                output[output_index] = maximum_value;
+                if ((uint16_t)(output_index + 1U) < output_count)
+                {
+                    output[output_index + 1U] = minimum_value;
+                }
+            }
+        }
     }
     return output_count;
 }

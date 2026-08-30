@@ -88,6 +88,32 @@ int main(void)
         CHECK(info.maximum == 3072U);
     }
 
+    /* Fast-scope downsampling must retain narrow raw noise excursions instead
+     * of selecting one evenly-spaced sample and silently dropping the other
+     * extrema. The two spikes are deliberately between the legacy sample
+     * positions for a 240-to-120 point conversion.
+     */
+    {
+        uint16_t noisy_history[240];
+        uint16_t noisy_output[120];
+        uint8_t found_low = 0U;
+        uint8_t found_high = 0U;
+
+        for (i = 0U; i < 240U; ++i) { noisy_history[i] = 2000U; }
+        noisy_history[1] = 1000U;
+        noisy_history[3] = 3000U;
+        CHECK(ScopeView_CopyWindow(noisy_history, 240U, 240U, 0U,
+                                   240U, 0U, SCOPE_VIEW_FREE,
+                                   noisy_output, 120U, &info) == 120U);
+        for (i = 0U; i < 120U; ++i)
+        {
+            if (noisy_output[i] == 1000U) { found_low = 1U; }
+            if (noisy_output[i] == 3000U) { found_high = 1U; }
+        }
+        CHECK(found_low != 0U);
+        CHECK(found_high != 0U);
+    }
+
     puts("scope view tests passed");
     return EXIT_SUCCESS;
 }

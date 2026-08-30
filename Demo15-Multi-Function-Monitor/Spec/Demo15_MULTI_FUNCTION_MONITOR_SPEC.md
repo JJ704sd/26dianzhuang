@@ -17,6 +17,13 @@ SpO2/PPG signal monitor without modifying Demo12, Demo13 or Demo14.
   1-5 s so low-frequency waveforms fit within the 8 KB SRAM budget.
 - Show input peak-to-peak voltage, input frequency and input duty. Label input
   duty as `DIN` so it cannot be confused with the PA2 PWM output duty.
+- Preserve raw ADC samples in the 2-40 ms fast-scope history. When more than
+  120 samples must be drawn, use chronological min/max peak detection rather
+  than averaging or evenly spaced point selection so narrow noise excursions
+  remain visible.
+- The 1-5 s slow history uses 80-sample averaging and 8-bit packing to fit the
+  SRAM budget. It is intended for low-frequency signals, not raw wideband-noise
+  inspection.
 - Retain PA2 PWM enable, frequency and duty controls, and PA6 frequency capture.
 
 ### ECG monitor mode
@@ -75,6 +82,8 @@ The visual rationale, evidence boundary and hardware stimulus matrix are in
 5. In oscilloscope mode, check PA3 waveform/Vpp/input duty, PA6 frequency, PA2
    PWM and all timebases with safe sine, square and pulse inputs. Check a 1 Hz
    waveform at 2-5 s, a 1 kHz waveform at 2-4 ms, and 25/50/75% input duty.
+   With DG1032Z noise output, verify that 2-40 ms fast timebases retain narrow
+   positive and negative excursions; use the 1 Vpp range for small noise.
 6. In ECG mode, use an isolated safe ECG source and check waveform, BPM,
    signal state, timebase and run/hold behavior.
 7. In simulated SpO2 mode, use the DG1032Z profiles in
