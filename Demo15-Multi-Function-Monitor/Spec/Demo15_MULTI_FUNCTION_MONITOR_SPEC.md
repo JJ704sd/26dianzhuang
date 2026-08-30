@@ -21,6 +21,10 @@ SpO2/PPG signal monitor without modifying Demo12, Demo13 or Demo14.
   120 samples must be drawn, use chronological min/max peak detection rather
   than averaging or evenly spaced point selection so narrow noise excursions
   remain visible.
+- After reset, acquire 10000 raw samples (500 ms at 20 kSa/s) before drawing
+  the first scope waveform. Display `WAIT` during this one-time settle period
+  so power-on/front-end transients do not set the apparent waveform height.
+  Mode changes must not restart the settle period.
 - The 1-5 s slow history uses 80-sample averaging and 8-bit packing to fit the
   SRAM budget. It is intended for low-frequency signals, not raw wideband-noise
   inspection.
@@ -79,6 +83,8 @@ The visual rationale, evidence boundary and hardware stimulus matrix are in
 3. Confirm the project links the scope view, ECG/pulse core, retained startup
    animation and emits the correctly named HEX file.
 4. Flash the board, hold SW2 repeatedly and verify the three-mode cycle.
+   Immediately after reset, verify that Scope shows `WAIT` briefly and then
+   enters `RUN` with the same settled height seen after cycling modes.
 5. In oscilloscope mode, check PA3 waveform/Vpp/input duty, PA6 frequency, PA2
    PWM and all timebases with safe sine, square and pulse inputs. Check a 1 Hz
    waveform at 2-5 s, a 1 kHz waveform at 2-4 ms, and 25/50/75% input duty.

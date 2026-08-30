@@ -56,6 +56,8 @@ Timestamps identify regions of interest rather than frame-accurate test steps.
   inverting analog front end.
 - Preserve the raw fast-history envelope with chronological min/max peak
   detection when the source window exceeds the 120-pixel display width.
+- Gate the first scope waveform behind a visible 500 ms `WAIT` state so raw
+  peak detection does not preserve power-on transients as normal signal data.
 - Display input Vpp, input frequency and input duty (`DIN`).
 - Calculate `DIN` from the midpoint between the observed minimum and maximum.
   Because the analog front end is inverting, samples below the midpoint count

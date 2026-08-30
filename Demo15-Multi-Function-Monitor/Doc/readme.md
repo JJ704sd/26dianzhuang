@@ -39,6 +39,11 @@ to the LCD width. Hold `SW1` to select the 1 Vpp range for low-amplitude noise.
 The 1-5 s views are averaged to 250 Sa/s for low-frequency/physiological
 signals and therefore intentionally do not preserve wideband raw noise.
 
+After reset, Scope displays `WAIT` for the first 500 ms of ADC acquisition and
+does not draw that startup interval. This prevents front-end/power-on
+transients from appearing as an abnormally tall first waveform. The settle
+gate runs once per reset and is not repeated when cycling modes.
+
 ## Hardware contract
 
 - MCU: GD32E230C8T6.
@@ -76,14 +81,14 @@ evidence boundary and signal-generator test matrix.
 - ArmClang 6.24 with size optimization (`-Oz`).
 - Device pack: `GigaDevice.GD32E23x_DFP 1.1.0`.
 - Result: `0 Error(s), 0 Warning(s)`.
-- Program size: Code 16986 B, RO data 6526 B.
+- Program size: Code 17070 B, RO data 6530 B.
 - Image RAM: RW 24 B plus ZI 6472 B = 6496 B. The ZI total includes the
   configured 1536 B stack, leaving 1696 B of the 8 KB SRAM unallocated.
 - The previous call-graph estimate used at most 320 B of stack, with the usual
   caveat for indirect calls and interrupt nesting; it fits inside the reserved
   stack.
 - HEX SHA-256:
-  `768072A2A77BD0347D37052B066369D4B958FDD90F8823C8A0B027A09830D6F3`.
+  `A02DF766567B1C9F9B324C5D46150EAC7196BC8E2CAAA36C167E3EDE18708740`.
 
 These values come from a full rebuild. Physical-board acceptance is still
 required.

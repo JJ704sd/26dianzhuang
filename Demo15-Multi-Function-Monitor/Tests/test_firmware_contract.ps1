@@ -65,5 +65,11 @@ if (($task -notmatch 'ScopeMetrics_Analyze\(') -or
     ($task -notmatch '\(const uint8_t \*\)"DIN"')) {
     throw 'Input duty measurement is not connected to the scope UI'
 }
+if (($task -notmatch '#define SCOPE_STARTUP_SETTLE_SAMPLES\s+\(ADC_SAMPLE_RATE_HZ / 2U\)') -or
+    ($task -notmatch 'fast_sample_count >= SCOPE_STARTUP_SETTLE_SAMPLES') -or
+    ($task -notmatch 'scope_startup_ready == 0U') -or
+    ($task -notmatch '\(const uint8_t \*\)"WAIT"')) {
+    throw 'Scope startup transients are not gated behind a visible settle state'
+}
 
 Write-Host 'Demo15 firmware contract passed.'

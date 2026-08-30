@@ -20,6 +20,7 @@
 #define SCOPE_SMALL_VPP_MV       1000U
 #define SCOPE_IDLE_SPAN_COUNTS   64U
 #define SCOPE_DUTY_MIN_SPAN_COUNTS 16U
+#define SCOPE_STARTUP_SETTLE_SAMPLES (ADC_SAMPLE_RATE_HZ / 2U)
 #define FAST_HISTORY_SAMPLES     800U
 #define FAST_DISPLAY_SAMPLES     WAVE_WIDTH
 #define SLOW_HISTORY_SAMPLES     1250U
@@ -54,6 +55,7 @@ static uint16_t fast_display_samples[FAST_DISPLAY_SAMPLES];
 static volatile uint16_t fast_write_index;
 static volatile uint16_t fast_history_count;
 static volatile uint32_t fast_sample_count;
+static volatile uint8_t scope_startup_ready;
 static volatile uint8_t slow_history[SLOW_HISTORY_SAMPLES];
 static volatile uint16_t slow_write_index;
 static volatile uint16_t slow_history_count;
@@ -114,6 +116,7 @@ void ECG_Init(uint16_t vref_value)
     fast_write_index = 0U;
     fast_history_count = 0U;
     fast_sample_count = 0U;
+    scope_startup_ready = 0U;
     slow_write_index = 0U;
     slow_history_count = 0U;
     ecg_decimation_sum = 0U;
@@ -184,6 +187,10 @@ static void ecg_adc_dma_callback(const uint16_t *samples, uint16_t count)
             fast_history_count++;
         }
         fast_sample_count++;
+        if((scope_startup_ready == 0U) &&
+           (fast_sample_count >= SCOPE_STARTUP_SETTLE_SAMPLES)){
+            scope_startup_ready = 1U;
+        }
 
         ecg_decimation_sum += raw_value;
         ecg_decimation_count++;
@@ -485,6 +492,15 @@ static void draw_scope_wave(uint16_t span_samples, uint8_t slow_timebase)
     int32_t y_position;
     scope_view_info_t view_info = {0U};
 
+    if(scope_startup_ready == 0U){
+        scope_vpp_mv = 0U;
+        scope_sample_frequency = 0U;
+        scope_metrics.valid = 0U;
+        scope_metrics.input_duty_percent = 0U;
+        draw_wave_grid();
+        return;
+    }
+
     primask = __get_PRIMASK();
     __disable_irq();
     if(slow_timebase != 0U){
@@ -683,11 +699,15 @@ static void scope_show_ui(void)
     uint32_t input_frequency = get_freq_value();
     uint32_t output_frequency = get_pwm_out_freq();
 
-    if(input_frequency == 0U){
+    if(scope_startup_ready == 0U){
+        input_frequency = 0U;
+    }else if(input_frequency == 0U){
         input_frequency = scope_sample_frequency;
     }
 
-    if(osc_stop_bit == OSC_RUN){
+    if(scope_startup_ready == 0U){
+        TFT_ShowString(44U, 0U, (const uint8_t *)"WAIT", BLACK, YELLOW, 16U, 0U);
+    }else if(osc_stop_bit == OSC_RUN){
         TFT_ShowString(44U, 0U, (const uint8_t *)"RUN ", BLACK, GREEN, 16U, 0U);
     }else{
         TFT_ShowString(44U, 0U, (const uint8_t *)"HOLD", BLACK, YELLOW, 16U, 0U);
